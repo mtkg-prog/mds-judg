@@ -1,0 +1,3 @@
+https://docs.google.com/spreadsheets/d/1GaymipeEqx2q4hmMlXFUEwM46KLfgp4Ah3U54E6DG3w/edit?gid=0#gid=0
+
+こちらのGASを入れたスプレッドシートの内容を理解して、コードの修正や入力フォーム、ダッシュボードなどをフロントで見れるようにしていきたい
