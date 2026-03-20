@@ -15,17 +15,18 @@ const SCORE_LABELS: Record<string, string> = {
   feasibility: '実現可能性',
 };
 
+function getScoreColor(score: number): string {
+  if (score <= 2) return 'bg-red-100 text-red-800';
+  if (score <= 4) return 'bg-orange-100 text-orange-800';
+  if (score <= 6) return 'bg-yellow-100 text-yellow-800';
+  if (score <= 8) return 'bg-green-100 text-green-800';
+  return 'bg-emerald-100 text-emerald-800';
+}
+
 function ScoreBadge({ score }: { score: number }) {
-  const colors: Record<number, string> = {
-    1: 'bg-red-100 text-red-800',
-    2: 'bg-orange-100 text-orange-800',
-    3: 'bg-yellow-100 text-yellow-800',
-    4: 'bg-green-100 text-green-800',
-    5: 'bg-emerald-100 text-emerald-800',
-  };
   return (
-    <Badge variant="outline" className={colors[score] || ''}>
-      {score} / 5
+    <Badge variant="outline" className={getScoreColor(score)}>
+      {score} / 10
     </Badge>
   );
 }
