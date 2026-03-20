@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [missions, setMissions] = useState<MissionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notConfigured, setNotConfigured] = useState(false);
 
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
@@ -22,6 +23,9 @@ export default function DashboardPage() {
         const res = await fetch('/api/missions');
         const json = await res.json();
         if (json.success) {
+          if (json.notConfigured) {
+            setNotConfigured(true);
+          }
           setMissions(json.data);
         } else {
           setError(json.error);
@@ -79,6 +83,16 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold">ダッシュボード</h1>
         <p className="text-muted-foreground">スプレッドシートの評価データを閲覧</p>
       </div>
+
+      {notConfigured && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800">
+          <p className="font-medium">Google Sheets API が未設定です</p>
+          <p className="text-sm mt-1">
+            ダッシュボードを利用するには、Vercelの環境変数にGoogle Service Accountの認証情報を設定してください。
+            セルフチェック機能は上部の「セルフチェック」からご利用いただけます。
+          </p>
+        </div>
+      )}
 
       <StatsCards missions={filteredMissions} />
 

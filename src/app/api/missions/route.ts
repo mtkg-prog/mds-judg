@@ -3,6 +3,13 @@ import { getAllMissions } from '@/lib/google-sheets';
 
 export async function GET(request: NextRequest) {
   try {
+    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const key = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+
+    if (!email || !key) {
+      return NextResponse.json({ success: true, data: [], notConfigured: true });
+    }
+
     const { searchParams } = request.nextUrl;
     const period = searchParams.get('period') || '';
     const department = searchParams.get('department') || '';
