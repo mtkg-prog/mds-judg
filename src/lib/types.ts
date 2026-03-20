@@ -55,6 +55,38 @@ export interface CheckResult {
   gradePay: number;
 }
 
+// Master data types (from spreadsheet master sheet)
+export interface PositionMapping {
+  position: string;
+  group: PositionGroup;
+}
+
+export interface GradeThreshold {
+  group: PositionGroup;
+  gradeLabel: string;
+  gradeNumber: number;
+  minPoint: number;
+}
+
+export interface GradePayEntry {
+  gradeLabel: string;
+  gradeNumber: number;
+  group: PositionGroup;
+  amount: number;
+}
+
+export interface MasterData {
+  positionMappings: PositionMapping[];
+  thresholds: GradeThreshold[];
+  gradePay: GradePayEntry[];
+}
+
+export interface GradeResult {
+  gradeNumber: number;
+  gradeLabel: string;
+  gradePay: number;
+}
+
 // Dashboard types (from spreadsheet)
 export interface MissionRow {
   rowNumber: number;

@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import type { MissionRow } from './types';
+import type { MissionRow, PositionMapping, GradeThreshold, GradePayEntry, MasterData, PositionGroup } from './types';
 
 function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -54,6 +54,88 @@ function parseRow(row: string[], rowNumber: number): MissionRow {
     finalGradeLabel: row[26] || undefined,
     finalGradePay: row[27] ? Number(row[27]) : undefined,
   };
+}
+
+const GROUP_LETTER_MAP: Record<string, PositionGroup> = {
+  A: 'groupA', L: 'groupL', U: 'groupU', G: 'groupG', D: 'groupD',
+};
+
+function parseGroupLetter(letter: string): PositionGroup {
+  return GROUP_LETTER_MAP[letter.trim().toUpperCase()] || 'groupA';
+}
+
+export async function getPositionMappings(): Promise<PositionMapping[]> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: getSpreadsheetId(),
+    range: 'master!A2:B',
+  });
+  return (res.data.values || [])
+    .filter(row => row[0]?.trim())
+    .map(row => ({
+      position: row[0].trim(),
+      group: parseGroupLetter(row[1] || 'A'),
+    }));
+}
+
+export async function getGradeThresholds(): Promise<GradeThreshold[]> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: getSpreadsheetId(),
+    range: 'master!D2:F',
+  });
+  return (res.data.values || [])
+    .filter(row => row[0]?.trim() && row[1]?.trim())
+    .map(row => {
+      const label = row[1].trim();
+      const num = parseInt(label.replace(/[^0-9]/g, ''), 10) || 1;
+      return {
+        group: parseGroupLetter(row[0]),
+        gradeLabel: label,
+        gradeNumber: num,
+        minPoint: parseFloat(row[2]) || 0,
+      };
+    });
+}
+
+export async function getGradePayTable(): Promise<GradePayEntry[]> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: getSpreadsheetId(),
+    range: 'master!H2:I',
+  });
+  return (res.data.values || [])
+    .filter(row => row[0]?.trim())
+    .map(row => {
+      const label = row[0].trim();
+      const letter = label.replace(/[0-9]/g, '');
+      const num = parseInt(label.replace(/[^0-9]/g, ''), 10) || 1;
+      return {
+        gradeLabel: label,
+        gradeNumber: num,
+        group: parseGroupLetter(letter),
+        amount: parseInt(row[1]) || 0,
+      };
+    });
+}
+
+export async function getMasterData(): Promise<MasterData | null> {
+  try {
+    const [positionMappings, thresholds, gradePay] = await Promise.all([
+      getPositionMappings(),
+      getGradeThresholds(),
+      getGradePayTable(),
+    ]);
+    if (positionMappings.length === 0 && thresholds.length === 0 && gradePay.length === 0) {
+      return null;
+    }
+    return { positionMappings, thresholds, gradePay };
+  } catch {
+    return null;
+  }
 }
 
 export async function getAllMissions(): Promise<MissionRow[]> {

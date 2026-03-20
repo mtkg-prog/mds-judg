@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { CheckForm } from '@/components/check/check-form';
 import { ScoreResult } from '@/components/check/score-result';
-import type { CheckResult, MissionInput, MissionWithScore, Position, ScoringResponse } from '@/lib/types';
+import type { CheckResult, GradeResult, MissionInput, MissionWithScore, Position, ScoringResponse } from '@/lib/types';
 import { roundToTwo } from '@/lib/utils';
-import { convertPointToGradeByPosition, convertGradeNumberToLabel, getGradePay } from '@/lib/aggregation';
 
 export default function CheckPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -46,9 +45,18 @@ export default function CheckPage() {
         scoredMissions.reduce((sum, m) => sum + (m.missionWeightedPoint || 0), 0)
       );
 
-      const gradeNumber = convertPointToGradeByPosition(position, totalPoint);
-      const gradeLabel = convertGradeNumberToLabel(position, gradeNumber);
-      const gradePay = getGradePay(position, gradeNumber);
+      const gradeRes = await fetch('/api/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ position, totalPoint }),
+      });
+      const gradeData: { success: boolean; error?: string } & GradeResult = await gradeRes.json();
+      if (!gradeData.success) {
+        setError(gradeData.error || 'グレード判定に失敗しました。');
+        setIsLoading(false);
+        return;
+      }
+      const { gradeNumber, gradeLabel, gradePay } = gradeData;
 
       setResult({
         missions: scoredMissions,
