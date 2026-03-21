@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { POSITIONS, type MissionInput, type Position } from '@/lib/types';
 
+const MIN_CHAR_M1 = 10;
+const MIN_CHAR_DETAIL = 30;
+
 interface MissionFormData extends MissionInput {
   id: string;
 }
@@ -30,11 +33,29 @@ interface CheckFormProps {
   isLoading: boolean;
 }
 
+function CharCount({ value, min }: { value: string; min: number }) {
+  const len = value.length;
+  const met = len >= min;
+  return (
+    <span className={`text-xs ${met ? 'text-green-600' : 'text-red-500'}`}>
+      {len}/{min}文字以上
+    </span>
+  );
+}
+
 export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
   const [position, setPosition] = useState<Position | ''>('');
   const [missions, setMissions] = useState<MissionFormData[]>([createEmptyMission()]);
 
   const totalWeight = missions.reduce((sum, m) => sum + (m.weight || 0), 0);
+
+  const allFieldsValid = missions.every(m =>
+    m.m1_missionName.length >= MIN_CHAR_M1 &&
+    m.m2_backgroundGoal.length >= MIN_CHAR_DETAIL &&
+    m.m3_contentDifficulty.length >= MIN_CHAR_DETAIL &&
+    m.m4_stakeholdersRole.length >= MIN_CHAR_DETAIL &&
+    m.m5_feasibilityEvidence.length >= MIN_CHAR_DETAIL
+  );
 
   function updateMission(id: string, field: keyof MissionInput, value: string | number) {
     setMissions(prev =>
@@ -111,7 +132,10 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>M1: ミッション名</Label>
+              <div className="flex items-center justify-between">
+                <Label>M1: ミッション名</Label>
+                <CharCount value={mission.m1_missionName} min={MIN_CHAR_M1} />
+              </div>
               <Input
                 value={mission.m1_missionName}
                 onChange={e => updateMission(mission.id, 'm1_missionName', e.target.value)}
@@ -120,7 +144,10 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>M2: 背景・課題と1年後に目指すゴール</Label>
+              <div className="flex items-center justify-between">
+                <Label>M2: 背景・課題と1年後に目指すゴール</Label>
+                <CharCount value={mission.m2_backgroundGoal} min={MIN_CHAR_DETAIL} />
+              </div>
               <Textarea
                 value={mission.m2_backgroundGoal}
                 onChange={e => updateMission(mission.id, 'm2_backgroundGoal', e.target.value)}
@@ -130,7 +157,10 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>M3: ミッションの内容や難易度</Label>
+              <div className="flex items-center justify-between">
+                <Label>M3: ミッションの内容や難易度</Label>
+                <CharCount value={mission.m3_contentDifficulty} min={MIN_CHAR_DETAIL} />
+              </div>
               <Textarea
                 value={mission.m3_contentDifficulty}
                 onChange={e => updateMission(mission.id, 'm3_contentDifficulty', e.target.value)}
@@ -140,7 +170,10 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>M4: 関係先・巻き込む相手・自分の役割</Label>
+              <div className="flex items-center justify-between">
+                <Label>M4: 関係先・巻き込む相手・自分の役割</Label>
+                <CharCount value={mission.m4_stakeholdersRole} min={MIN_CHAR_DETAIL} />
+              </div>
               <Textarea
                 value={mission.m4_stakeholdersRole}
                 onChange={e => updateMission(mission.id, 'm4_stakeholdersRole', e.target.value)}
@@ -150,7 +183,10 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>M5: ミッション完遂の根拠</Label>
+              <div className="flex items-center justify-between">
+                <Label>M5: ミッション完遂の根拠</Label>
+                <CharCount value={mission.m5_feasibilityEvidence} min={MIN_CHAR_DETAIL} />
+              </div>
               <Textarea
                 value={mission.m5_feasibilityEvidence}
                 onChange={e => updateMission(mission.id, 'm5_feasibilityEvidence', e.target.value)}
@@ -171,11 +207,17 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
         </span>
       </div>
 
+      {!allFieldsValid && (
+        <p className="text-sm text-red-500">
+          すべての入力欄に最低文字数以上の入力が必要です（M1: {MIN_CHAR_M1}文字以上、M2〜M5: {MIN_CHAR_DETAIL}文字以上）
+        </p>
+      )}
+
       <Button
         type="submit"
         size="lg"
         className="w-full"
-        disabled={isLoading || !position || totalWeight !== 100}
+        disabled={isLoading || !position || totalWeight !== 100 || !allFieldsValid}
       >
         {isLoading ? 'AI採点中...' : 'AI採点を実行'}
       </Button>
