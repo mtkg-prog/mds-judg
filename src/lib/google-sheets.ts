@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import type { MissionRow, PositionMapping, GradeThreshold, GradePayEntry, MasterData, PositionGroup } from './types';
+import type { MissionRow, PositionMapping, GradeThreshold, GradePayEntry, MasterData, PositionGroup, Eval360Dimension, Eval360AssignmentRow, EvaluationRelationship } from './types';
 
 function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -136,6 +136,50 @@ export async function getMasterData(): Promise<MasterData | null> {
   } catch {
     return null;
   }
+}
+
+export async function get360EvalDimensions(): Promise<Eval360Dimension[]> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: getSpreadsheetId(),
+    range: '360eval!A2:D',
+  });
+  return (res.data.values || [])
+    .filter(row => row[0]?.trim())
+    .map(row => {
+      const groupStr = (row[3] || '').trim();
+      const groups = groupStr
+        ? groupStr.split(',').map((g: string) => g.trim())
+        : ['all'];
+      return {
+        key: row[0].trim(),
+        label: (row[1] || row[0]).trim(),
+        description: (row[2] || '').trim(),
+        groups,
+      };
+    });
+}
+
+const VALID_RELATIONSHIPS = ['上司', '同僚', '部下', '本人'];
+
+export async function get360Assignments(): Promise<Eval360AssignmentRow[]> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: getSpreadsheetId(),
+    range: '360assign!A2:E',
+  });
+  return (res.data.values || [])
+    .filter(row => row[0]?.trim() && row[2]?.trim())
+    .map(row => {
+      const rel = (row[4] || '').trim();
+      return {
+        evaluateeNumber: row[0].trim(),  // A列: 被評価者番号
+        evaluatorNumber: row[2].trim(),  // C列: 評価者番号
+        relationship: (VALID_RELATIONSHIPS.includes(rel) ? rel : '同僚') as EvaluationRelationship,
+      };
+    });
 }
 
 export async function getAllMissions(): Promise<MissionRow[]> {

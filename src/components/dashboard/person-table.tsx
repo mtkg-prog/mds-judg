@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { MissionRow, PersonSummary } from '@/lib/types';
@@ -79,9 +79,8 @@ export function PersonTable({ missions }: PersonTableProps) {
           </TableRow>
         ) : (
           summaries.map(person => (
-            <>
+            <Fragment key={person.aggregationKey}>
               <TableRow
-                key={person.aggregationKey}
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => setExpandedKey(
                   expandedKey === person.aggregationKey ? null : person.aggregationKey
@@ -145,7 +144,7 @@ export function PersonTable({ missions }: PersonTableProps) {
                   </TableCell>
                 </TableRow>
               )}
-            </>
+            </Fragment>
           ))
         )}
       </TableBody>

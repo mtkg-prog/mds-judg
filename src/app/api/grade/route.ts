@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { resolveGrade } from '@/lib/master-data';
+import { getSession } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const user = await getSession();
+    if (!user) {
+      return NextResponse.json({ success: false, error: '認証が必要です' }, { status: 401 });
+    }
     const { position, totalPoint } = await request.json();
 
     if (!position || totalPoint == null) {

@@ -132,3 +132,64 @@ export interface PersonSummary {
   finalGradePay: number;
   status: string;
 }
+
+// 360-degree evaluation types
+export type EvaluationRelationship = '上司' | '同僚' | '部下' | '本人';
+export type CycleStatus = 'draft' | 'open' | 'closed';
+export type AssignmentStatus = 'pending' | 'submitted';
+
+export interface Eval360Dimension {
+  key: string;
+  label: string;
+  description: string;
+  groups: string[]; // ['all'] or ['A','L'] etc.
+}
+
+export interface Eval360AssignmentRow {
+  evaluateeNumber: string;
+  evaluatorNumber: string;
+  relationship: EvaluationRelationship;
+}
+
+export interface Eval360Scores {
+  [dimensionKey: string]: number; // 1-5
+}
+
+export interface Eval360AssignmentView {
+  id: string;
+  evaluateeName: string;
+  evaluateeDepartment: string;
+  relationship: EvaluationRelationship;
+  status: AssignmentStatus;
+}
+
+export interface Eval360CategoryResult {
+  relationship: EvaluationRelationship;
+  responseCount: number;
+  averageScores: Record<string, number>;
+  comments: string[];
+}
+
+export interface Eval360ResultView {
+  evaluateeName: string;
+  cycleName: string;
+  categories: Eval360CategoryResult[];
+  overallAverages: Record<string, number>;
+}
+
+// Auth types
+export type UserRole = 'admin' | 'manager' | 'employee';
+
+export interface SessionPayload {
+  sessionId: string;
+  userId: string;
+  role: UserRole;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  employeeId?: string;
+  employeeName?: string;
+}

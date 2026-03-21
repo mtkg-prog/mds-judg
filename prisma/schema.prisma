@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("employee") // "admin" | "manager" | "employee"
+  employee     Employee?
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Employee {
+  id             String     @id @default(cuid())
+  employeeNumber String     @unique
+  name           String
+  department     String
+  position       String
+  grade          String
+  email          String     @unique
+  userId         String?    @unique
+  user           User?      @relation(fields: [userId], references: [id])
+  managerId      String?
+  manager        Employee?  @relation("ManagerSubordinates", fields: [managerId], references: [id])
+  subordinates   Employee[] @relation("ManagerSubordinates")
+  evaluationsGiven    EvaluationAssignment[] @relation("Evaluator")
+  evaluationsReceived EvaluationAssignment[] @relation("Evaluatee")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model EvaluationCycle {
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("draft") // "draft" | "open" | "closed"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assignments EvaluationAssignment[]
+  responses   EvaluationResponse[]
+}
+
+model EvaluationAssignment {
+  id           String          @id @default(cuid())
+  cycleId      String
+  cycle        EvaluationCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  evaluatorId  String
+  evaluator    Employee        @relation("Evaluator", fields: [evaluatorId], references: [id])
+  evaluateeId  String
+  evaluatee    Employee        @relation("Evaluatee", fields: [evaluateeId], references: [id])
+  relationship String          // "上司" | "同僚" | "部下" | "本人"
+  status       String          @default("pending") // "pending" | "submitted"
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  response     EvaluationResponse?
+
+  @@unique([cycleId, evaluatorId, evaluateeId])
+}
+
+model EvaluationResponse {
+  id           String              @id @default(cuid())
+  assignmentId String              @unique
+  assignment   EvaluationAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  cycleId      String
+  cycle        EvaluationCycle     @relation(fields: [cycleId], references: [id])
+  evaluateeId  String
+  relationship String
+  scores       String              // JSON: { "dimensionKey": 1-5, ... }
+  comment      String              @default("")
+  submittedAt  DateTime            @default(now())
+
+  @@index([cycleId, evaluateeId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

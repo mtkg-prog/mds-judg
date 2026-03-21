@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllMissions } from '@/lib/google-sheets';
+import { getSession } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getSession();
+    if (!user) {
+      return NextResponse.json({ success: false, error: '認証が必要です' }, { status: 401 });
+    }
     const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const key = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
 

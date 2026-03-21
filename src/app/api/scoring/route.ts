@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildScoringPrompt, calculateMissionWeightedPoint } from '@/lib/scoring';
 import { callGeminiForScoring } from '@/lib/gemini';
+import { getSession } from '@/lib/auth';
 import type { ScoringRequest, ScoringResponse } from '@/lib/types';
 
 export async function POST(request: NextRequest): Promise<NextResponse<ScoringResponse>> {
   try {
+    const user = await getSession();
+    if (!user) {
+      return NextResponse.json({ success: false, error: '認証が必要です' }, { status: 401 });
+    }
     const body: ScoringRequest = await request.json();
     const { mission } = body;
 
