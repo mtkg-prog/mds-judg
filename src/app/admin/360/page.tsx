@@ -62,7 +62,7 @@ export default function Admin360Page() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-2xl font-bold mb-6">360度評価 管理</h1>
 
       <Card className="mb-8">
@@ -70,7 +70,7 @@ export default function Admin360Page() {
           <CardTitle className="text-base">新規サイクル作成</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="flex items-end gap-4 flex-wrap">
+          <form onSubmit={handleCreate} className="flex flex-col sm:flex-row sm:items-end gap-4 flex-wrap">
             <div className="space-y-1">
               <Label htmlFor="name">サイクル名</Label>
               <Input
@@ -79,7 +79,7 @@ export default function Admin360Page() {
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="2026年上期 360度評価"
                 required
-                className="w-64"
+                className="w-full sm:w-64"
               />
             </div>
             <div className="space-y-1">

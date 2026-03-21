@@ -19,6 +19,7 @@ interface EmployeeTableProps {
 
 export function EmployeeTable({ employees }: EmployeeTableProps) {
   return (
+    <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
@@ -81,5 +82,6 @@ export function EmployeeTable({ employees }: EmployeeTableProps) {
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

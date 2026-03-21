@@ -25,9 +25,9 @@ export function Filters({
   onNameChange,
 }: FiltersProps) {
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-4">
       <Select value={selectedPeriod} onValueChange={onPeriodChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="期間で絞り込み" />
         </SelectTrigger>
         <SelectContent>
@@ -39,7 +39,7 @@ export function Filters({
       </Select>
 
       <Select value={selectedDepartment} onValueChange={onDepartmentChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-full sm:w-[180px]">
           <SelectValue placeholder="部署で絞り込み" />
         </SelectTrigger>
         <SelectContent>
@@ -54,7 +54,7 @@ export function Filters({
         placeholder="氏名で検索"
         value={nameQuery}
         onChange={e => onNameChange(e.target.value)}
-        className="w-[200px]"
+        className="w-full sm:w-[200px]"
       />
     </div>
   );

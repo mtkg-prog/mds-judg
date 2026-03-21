@@ -40,7 +40,7 @@ export function EmployeeForm({ employee, employees = [] }: EmployeeFormProps) {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="employeeNumber">社員番号</Label>
               <Input
@@ -61,7 +61,7 @@ export function EmployeeForm({ employee, employees = [] }: EmployeeFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="department">部署</Label>
               <Input
@@ -90,7 +90,7 @@ export function EmployeeForm({ employee, employees = [] }: EmployeeFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="grade">等級</Label>
               <Input

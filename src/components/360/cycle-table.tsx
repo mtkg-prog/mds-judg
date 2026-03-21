@@ -41,6 +41,7 @@ function statusBadge(status: string) {
 
 export function CycleTable({ cycles, onDelete }: CycleTableProps) {
   return (
+    <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
@@ -98,5 +99,6 @@ export function CycleTable({ cycles, onDelete }: CycleTableProps) {
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

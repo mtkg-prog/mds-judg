@@ -43,7 +43,7 @@ export function ScoreResult({ result }: ScoreResultProps) {
           <CardTitle>総合結果</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-sm text-muted-foreground">総合ポイント</p>
               <p className="text-3xl font-bold">{result.totalPoint}</p>
@@ -63,9 +63,9 @@ export function ScoreResult({ result }: ScoreResultProps) {
       {result.missions.map((mission, index) => (
         <Card key={index}>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <CardTitle>ミッション {index + 1}: {mission.input.m1_missionName}</CardTitle>
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="shrink-0">
                 ウェイト: {mission.input.weight}% / 加重ポイント: {mission.missionWeightedPoint}
               </Badge>
             </div>

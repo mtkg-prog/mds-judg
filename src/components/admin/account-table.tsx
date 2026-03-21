@@ -25,6 +25,7 @@ interface AccountTableProps {
 
 export function AccountTable({ users }: AccountTableProps) {
   return (
+    <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
@@ -79,5 +80,6 @@ export function AccountTable({ users }: AccountTableProps) {
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

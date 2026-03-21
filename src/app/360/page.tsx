@@ -48,7 +48,7 @@ export default function My360Page() {
   )];
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-2xl font-bold mb-6">360度評価</h1>
 
       {loading ? (
@@ -63,6 +63,7 @@ export default function My360Page() {
               {pending.length === 0 ? (
                 <p className="text-sm text-muted-foreground">未回答の評価はありません</p>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -89,6 +90,7 @@ export default function My360Page() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -101,6 +103,7 @@ export default function My360Page() {
               {submitted.length === 0 ? (
                 <p className="text-sm text-muted-foreground">回答済みの評価はありません</p>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -123,6 +126,7 @@ export default function My360Page() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

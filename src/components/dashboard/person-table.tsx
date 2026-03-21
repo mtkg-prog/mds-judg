@@ -56,6 +56,7 @@ export function PersonTable({ missions }: PersonTableProps) {
   }
 
   return (
+    <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
@@ -108,6 +109,7 @@ export function PersonTable({ missions }: PersonTableProps) {
                   <TableCell colSpan={9} className="bg-muted/30 p-4">
                     <div className="space-y-2">
                       <p className="text-sm font-medium">ミッション詳細</p>
+                      <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -140,6 +142,7 @@ export function PersonTable({ missions }: PersonTableProps) {
                           ))}
                         </TableBody>
                       </Table>
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -149,5 +152,6 @@ export function PersonTable({ missions }: PersonTableProps) {
         )}
       </TableBody>
     </Table>
+    </div>
   );
 }

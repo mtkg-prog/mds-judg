@@ -53,7 +53,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-6xl space-y-6 p-6">
+      <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 p-4 sm:p-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-6xl p-6">
+      <div className="mx-auto max-w-6xl p-4 sm:p-6">
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
           <p className="font-medium">データの取得に失敗しました</p>
           <p className="text-sm mt-1">{error}</p>
@@ -78,7 +78,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">ダッシュボード</h1>
         <p className="text-muted-foreground">スプレッドシートの評価データを閲覧</p>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ const ROLE_LABEL: Record<string, string> = {
 export function Header() {
   const pathname = usePathname();
   const user = useSession();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (pathname === '/login') return null;
 
@@ -32,11 +34,11 @@ export function Header() {
 
   return (
     <header className="border-b bg-white">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
         <Link href="/" className="font-bold text-lg">
           MDS AI判定
         </Link>
-        <nav className="flex gap-4">
+        <nav className="hidden md:flex gap-4">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -53,7 +55,7 @@ export function Header() {
           ))}
         </nav>
         {user && (
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto hidden md:flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
               {user.employeeName || user.email}
               <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 rounded">
@@ -67,7 +69,65 @@ export function Header() {
             </form>
           </div>
         )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto md:hidden"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="メニュー"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            {menuOpen ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </>
+            ) : (
+              <>
+                <line x1="4" y1="6" x2="20" y2="6" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="18" x2="20" y2="18" />
+              </>
+            )}
+          </svg>
+        </Button>
       </div>
+      {menuOpen && (
+        <div className="border-t md:hidden px-4 pb-4 space-y-2">
+          <nav className="flex flex-col gap-1 pt-3">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  'text-sm py-2 px-2 rounded transition-colors hover:bg-gray-100',
+                  pathname === item.href
+                    ? 'text-foreground font-medium bg-gray-50'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          {user && (
+            <div className="flex items-center justify-between border-t pt-3">
+              <span className="text-sm text-muted-foreground">
+                {user.employeeName || user.email}
+                <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 rounded">
+                  {ROLE_LABEL[user.role] || user.role}
+                </span>
+              </span>
+              <form action={logout}>
+                <Button variant="outline" size="sm" type="submit">
+                  ログアウト
+                </Button>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

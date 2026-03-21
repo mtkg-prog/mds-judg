@@ -12,7 +12,7 @@ function OverallScoreBar({ label, score }: { label: string; score: number }) {
   const pct = (score / 5) * 100;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm w-36 shrink-0">{label}</span>
+      <span className="text-sm w-28 sm:w-36 shrink-0">{label}</span>
       <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
         <div
           className="h-full bg-blue-600 rounded-full"
