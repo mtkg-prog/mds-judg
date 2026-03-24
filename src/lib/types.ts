@@ -184,12 +184,14 @@ export interface SessionPayload {
   sessionId: string;
   userId: string;
   role: UserRole;
+  mustChangePassword: boolean;
 }
 
 export interface AuthUser {
   id: string;
   email: string;
   role: UserRole;
+  mustChangePassword: boolean;
   employeeId?: string;
   employeeName?: string;
 }

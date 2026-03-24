@@ -40,8 +40,8 @@ export async function login(
     return { error: 'メールアドレスまたはパスワードが正しくありません' };
   }
 
-  await createSession(user.id, user.role as UserRole);
-  redirect('/');
+  await createSession(user.id, user.role as UserRole, user.mustChangePassword);
+  redirect(user.mustChangePassword ? '/change-password' : '/');
 }
 
 export async function logout(): Promise<void> {

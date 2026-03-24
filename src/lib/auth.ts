@@ -24,7 +24,7 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-export async function createSession(userId: string, role: UserRole): Promise<void> {
+export async function createSession(userId: string, role: UserRole, mustChangePassword = false): Promise<void> {
   const expiresAt = new Date(Date.now() + SESSION_EXPIRY_HOURS * 60 * 60 * 1000);
 
   const session = await prisma.session.create({
@@ -35,6 +35,7 @@ export async function createSession(userId: string, role: UserRole): Promise<voi
     sessionId: session.id,
     userId,
     role,
+    mustChangePassword,
   };
 
   const token = await new SignJWT(payload as unknown as Record<string, unknown>)
@@ -77,6 +78,7 @@ export async function getSession(): Promise<AuthUser | null> {
       id: userId,
       email: session.user.email,
       role: role as UserRole,
+      mustChangePassword: session.user.mustChangePassword,
       employeeId: session.user.employee?.id,
       employeeName: session.user.employee?.name,
     };

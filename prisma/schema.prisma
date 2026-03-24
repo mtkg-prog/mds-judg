@@ -12,6 +12,7 @@ model User {
   email        String    @unique
   passwordHash String
   role         String    @default("employee") // "admin" | "manager" | "employee"
+  mustChangePassword Boolean @default(false)
   employee     Employee?
   sessions     Session[]
   createdAt    DateTime  @default(now())

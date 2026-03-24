@@ -7,6 +7,36 @@ const PUBLIC_PATHS = ['/login', '/api/health', '/api/setup'];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // --- Access gate: shared key ---
+  const ACCESS_KEY = process.env.ACCESS_KEY;
+  if (ACCESS_KEY) {
+    const hasAccess = request.cookies.get('access_granted')?.value === ACCESS_KEY;
+
+    if (!hasAccess) {
+      const keyParam = request.nextUrl.searchParams.get('access_key');
+      if (keyParam === ACCESS_KEY) {
+        const cleanUrl = new URL(request.nextUrl.pathname, request.url);
+        const response = NextResponse.redirect(cleanUrl);
+        response.cookies.set('access_granted', ACCESS_KEY, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 365,
+          path: '/',
+        });
+        return response;
+      }
+
+      if (!pathname.startsWith('/_next/') && !pathname.startsWith('/favicon.ico')) {
+        return new Response(
+          '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif"><h1>アクセスが制限されています</h1></body></html>',
+          { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+        );
+      }
+    }
+  }
+  // --- End access gate ---
+
   if (
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith('/_next/') ||
@@ -30,6 +60,11 @@ export async function proxy(request: NextRequest) {
 
     if (pathname.startsWith('/admin') && payload.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // Force password change redirect
+    if (payload.mustChangePassword && pathname !== '/change-password') {
+      return NextResponse.redirect(new URL('/change-password', request.url));
     }
 
     return NextResponse.next({
