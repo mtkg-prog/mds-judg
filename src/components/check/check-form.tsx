@@ -11,6 +11,7 @@ import { POSITIONS, type MissionInput, type Position } from '@/lib/types';
 
 const MIN_CHAR_M1 = 10;
 const MIN_CHAR_DETAIL = 30;
+const MAX_MISSIONS = 3;
 
 interface MissionFormData extends MissionInput {
   id: string;
@@ -64,6 +65,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
   }
 
   function addMission() {
+    if (missions.length >= MAX_MISSIONS) return;
     setMissions(prev => [...prev, createEmptyMission()]);
   }
 
@@ -102,10 +104,21 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
         </CardContent>
       </Card>
 
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+        <p className="font-medium">ミッションウェイト（重要度の配分）について</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <li>ミッションは最大{MAX_MISSIONS}つまで設定できます</li>
+          <li>各ミッションに重要度の配分（ウェイト）を設定し、<strong>合計が100%</strong>になるようにしてください</li>
+          <li>
+            例：1つの場合 → 100%　／　2つの場合 → 60% + 40%　／　3つの場合 → 50% + 30% + 20%
+          </li>
+        </ul>
+      </div>
+
       {missions.map((mission, index) => (
         <Card key={mission.id}>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>ミッション {index + 1}</CardTitle>
+            <CardTitle>ミッション {index + 1} / {missions.length}</CardTitle>
             {missions.length > 1 && (
               <Button
                 type="button"
@@ -120,15 +133,18 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>ウェイト（%）</Label>
+              <Label>ミッションウェイト（重要度の配分 %）</Label>
               <Input
                 type="number"
                 min={0}
                 max={100}
                 value={mission.weight || ''}
                 onChange={e => updateMission(mission.id, 'weight', Number(e.target.value))}
-                placeholder="例: 30"
+                placeholder={missions.length === 1 ? "例: 100" : "例: 30"}
               />
+              <p className="text-xs text-muted-foreground">
+                全ミッションのウェイト合計が100%になるよう配分してください
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -198,14 +214,32 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
         </Card>
       ))}
 
-      <div className="flex items-center gap-4">
-        <Button type="button" variant="outline" onClick={addMission}>
-          + ミッションを追加
-        </Button>
-        <span className={`text-sm ${totalWeight === 100 ? 'text-green-600' : 'text-red-500'}`}>
-          ウェイト合計: {totalWeight}%{totalWeight !== 100 && '（100%にしてください）'}
-        </span>
+      <div className={`flex items-center justify-between rounded-lg border p-3 ${
+        totalWeight === 100
+          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
+          : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'
+      }`}>
+        <span className="text-sm font-medium">ウェイト合計</span>
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+            <div
+              className={`h-full rounded-full transition-all ${
+                totalWeight === 100 ? 'bg-green-500' : totalWeight > 100 ? 'bg-red-500' : 'bg-amber-500'
+              }`}
+              style={{ width: `${Math.min(totalWeight, 100)}%` }}
+            />
+          </div>
+          <span className={`text-sm font-bold ${totalWeight === 100 ? 'text-green-600' : 'text-red-500'}`}>
+            {totalWeight}% / 100%
+          </span>
+        </div>
       </div>
+
+      {missions.length < MAX_MISSIONS && (
+        <Button type="button" variant="outline" onClick={addMission}>
+          + ミッションを追加（残り{MAX_MISSIONS - missions.length}つ）
+        </Button>
+      )}
 
       {!allFieldsValid && (
         <p className="text-sm text-red-500">
