@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getSession, hashPassword } from '@/lib/auth';
+import { syncToSisterApp, mapRoleToSisterApp } from '@/lib/sync';
 
 const accountSchema = z.object({
   email: z.string().email(),
@@ -81,6 +82,17 @@ export async function POST(request: Request) {
       const message = e instanceof Error ? e.message : String(e);
       errors.push({ email: account.email, error: message });
     }
+  }
+
+  // 作成されたアカウントを相手アプリに同期（fire-and-forget）
+  for (const account of accounts) {
+    syncToSisterApp({
+      action: "create",
+      email: account.email,
+      name: account.email.split("@")[0],
+      passwordHash,
+      role: mapRoleToSisterApp(account.role),
+    });
   }
 
   return NextResponse.json({ created, skipped, errors });

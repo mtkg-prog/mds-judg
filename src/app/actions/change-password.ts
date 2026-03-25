@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getSession, hashPassword, createSession, deleteSession } from '@/lib/auth';
+import { syncToSisterApp } from '@/lib/sync';
 import type { UserRole } from '@/lib/types';
 
 const changePasswordSchema = z
@@ -44,6 +45,13 @@ export async function changePassword(
   await prisma.user.update({
     where: { id: user.id },
     data: { passwordHash, mustChangePassword: false },
+  });
+
+  // 相手アプリに同期（fire-and-forget）
+  syncToSisterApp({
+    action: "update-password",
+    email: user.email,
+    passwordHash,
   });
 
   // Recreate session with mustChangePassword=false so proxy allows navigation
