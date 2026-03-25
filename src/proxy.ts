@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const PUBLIC_PATHS = ['/login', '/api/health', '/api/setup'];
+const PUBLIC_PATHS = ['/login', '/api/health', '/api/setup', '/api/internal/'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- Access gate: shared key ---
   const ACCESS_KEY = process.env.ACCESS_KEY;
-  if (ACCESS_KEY) {
+  if (ACCESS_KEY && !pathname.startsWith('/api/internal/')) {
     const hasAccess = request.cookies.get('access_granted')?.value === ACCESS_KEY;
 
     if (!hasAccess) {
