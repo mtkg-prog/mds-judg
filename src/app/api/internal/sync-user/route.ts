@@ -27,10 +27,11 @@ export async function POST(request: NextRequest) {
       });
 
       if (existing) {
+        let updated = false;
+
         // User は存在するが Employee が無い場合は Employee を作成
         if (!existing.employee) {
           const empNumber = employeeCode || email.split("@")[0];
-          // employeeNumber 重複チェック
           const empExists = await prisma.employee.findUnique({ where: { employeeNumber: empNumber } });
           if (!empExists) {
             await prisma.employee.create({
@@ -44,15 +45,36 @@ export async function POST(request: NextRequest) {
                 userId: existing.id,
               },
             });
-            return NextResponse.json({ status: "updated", detail: "employee created" });
+            updated = true;
           }
         }
-        return NextResponse.json({ status: "skipped", reason: "already exists" });
+
+        // パスワードがランダムUUID由来の場合、初期パスワードで上書き
+        if (passwordHash) {
+          await prisma.user.update({
+            where: { email },
+            data: { passwordHash },
+          });
+          updated = true;
+        } else if (existing.mustChangePassword) {
+          // hr-faq 側で未変更 → 初期パスワード「password」に揃える
+          const defaultHash = await hashPassword("password");
+          await prisma.user.update({
+            where: { email },
+            data: { passwordHash: defaultHash },
+          });
+          updated = true;
+        }
+
+        return NextResponse.json({
+          status: updated ? "updated" : "skipped",
+          reason: updated ? undefined : "already exists",
+        });
       }
 
       // mds-judg の User.passwordHash は required なので、
-      // パスワードがない場合はダミーハッシュを生成
-      const hash = passwordHash || await hashPassword(crypto.randomUUID());
+      // パスワードがない場合は初期パスワード「password」のハッシュを設定
+      const hash = passwordHash || await hashPassword("password");
 
       const newUser = await prisma.user.create({
         data: {
@@ -90,8 +112,8 @@ export async function POST(request: NextRequest) {
       }
 
       // passwordHash が null の場合（hr-faqでリセットされた場合）、
-      // ランダムハッシュを設定して mustChangePassword=true にする
-      const hash = passwordHash || await hashPassword(crypto.randomUUID());
+      // 初期パスワード「password」のハッシュを設定して mustChangePassword=true にする
+      const hash = passwordHash || await hashPassword("password");
 
       await prisma.user.update({
         where: { email },
