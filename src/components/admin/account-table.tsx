@@ -29,9 +29,12 @@ export function AccountTable({ users }: AccountTableProps) {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>社員番号</TableHead>
+          <TableHead>氏名</TableHead>
           <TableHead>メールアドレス</TableHead>
+          <TableHead>部署</TableHead>
+          <TableHead>役職</TableHead>
           <TableHead>ロール</TableHead>
-          <TableHead>紐付け社員</TableHead>
           <TableHead>作成日</TableHead>
           <TableHead className="w-[100px]">操作</TableHead>
         </TableRow>
@@ -39,20 +42,23 @@ export function AccountTable({ users }: AccountTableProps) {
       <TableBody>
         {users.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground">
+            <TableCell colSpan={8} className="text-center text-muted-foreground">
               アカウントがありません
             </TableCell>
           </TableRow>
         )}
         {users.map((user) => (
           <TableRow key={user.id}>
+            <TableCell>{user.employee?.employeeNumber ?? '-'}</TableCell>
+            <TableCell>{user.employee?.name ?? '-'}</TableCell>
             <TableCell>{user.email}</TableCell>
+            <TableCell>{user.employee?.department ?? '-'}</TableCell>
+            <TableCell>{user.employee?.position ?? '-'}</TableCell>
             <TableCell>
               <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded">
                 {ROLE_LABEL[user.role] || user.role}
               </span>
             </TableCell>
-            <TableCell>{user.employee?.name ?? '-'}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
               {user.createdAt.toLocaleDateString('ja-JP')}
             </TableCell>

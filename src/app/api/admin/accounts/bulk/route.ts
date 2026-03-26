@@ -7,7 +7,11 @@ import { syncToSisterApp, mapRoleToSisterApp } from '@/lib/sync';
 const accountSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'manager', 'employee']),
-  employeeNumber: z.string().optional(),
+  employeeNumber: z.string().min(1),
+  name: z.string().min(1),
+  department: z.string().min(1),
+  position: z.string().min(1),
+  grade: z.string().min(1),
 });
 
 const bulkSchema = z.object({
@@ -53,29 +57,51 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const newUser = await prisma.user.create({
-        data: {
-          email: account.email,
-          passwordHash,
-          role: account.role,
-          mustChangePassword: true,
-        },
-      });
-
-      if (account.employeeNumber) {
-        try {
-          await prisma.employee.update({
-            where: { employeeNumber: account.employeeNumber },
-            data: { userId: newUser.id },
-          });
-        } catch {
-          // Employee not found - user created but not linked
-          errors.push({
+      await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
             email: account.email,
-            error: `社員番号 ${account.employeeNumber} が見つかりません（アカウントは作成済み）`,
+            passwordHash,
+            role: account.role,
+            mustChangePassword: true,
+          },
+        });
+
+        // Check if employee with this number already exists
+        const existingEmployee = await tx.employee.findUnique({
+          where: { employeeNumber: account.employeeNumber },
+        });
+
+        if (existingEmployee) {
+          if (existingEmployee.userId) {
+            throw new Error(`社員番号 ${account.employeeNumber} は既に別のアカウントに紐付けられています`);
+          }
+          // Link and update existing unlinked employee
+          await tx.employee.update({
+            where: { id: existingEmployee.id },
+            data: {
+              name: account.name,
+              department: account.department,
+              position: account.position,
+              grade: account.grade,
+              email: account.email,
+              userId: newUser.id,
+            },
+          });
+        } else {
+          await tx.employee.create({
+            data: {
+              employeeNumber: account.employeeNumber,
+              name: account.name,
+              department: account.department,
+              position: account.position,
+              grade: account.grade,
+              email: account.email,
+              userId: newUser.id,
+            },
           });
         }
-      }
+      });
 
       created++;
     } catch (e: unknown) {
@@ -89,7 +115,7 @@ export async function POST(request: Request) {
     syncToSisterApp({
       action: "create",
       email: account.email,
-      name: account.email.split("@")[0],
+      name: account.name,
       passwordHash,
       role: mapRoleToSisterApp(account.role),
     });

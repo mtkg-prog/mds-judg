@@ -18,8 +18,7 @@ export default async function EditAccountPage({
   });
   if (!user) notFound();
 
-  const unlinkedEmployees = await prisma.employee.findMany({
-    where: { userId: null },
+  const employees = await prisma.employee.findMany({
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
@@ -34,7 +33,7 @@ export default async function EditAccountPage({
         </Link>
       </div>
       <div className="space-y-6">
-        <AccountForm user={user} unlinkedEmployees={unlinkedEmployees} />
+        <AccountForm user={user} employees={employees} />
         <ResetPasswordForm userId={user.id} />
       </div>
     </div>

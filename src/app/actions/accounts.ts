@@ -10,13 +10,23 @@ const accountSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
   password: z.string().min(6, 'パスワードは6文字以上にしてください'),
   role: z.enum(['admin', 'manager', 'employee']),
-  employeeId: z.string().optional(),
+  employeeNumber: z.string().min(1, '社員番号を入力してください'),
+  name: z.string().min(1, '氏名を入力してください'),
+  department: z.string().min(1, '部署を入力してください'),
+  position: z.string().min(1, '役職を選択してください'),
+  grade: z.string().min(1, '等級を入力してください'),
+  managerId: z.string().optional(),
 });
 
 const updateAccountSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
   role: z.enum(['admin', 'manager', 'employee']),
-  employeeId: z.string().optional(),
+  employeeNumber: z.string().min(1, '社員番号を入力してください'),
+  name: z.string().min(1, '氏名を入力してください'),
+  department: z.string().min(1, '部署を入力してください'),
+  position: z.string().min(1, '役職を選択してください'),
+  grade: z.string().min(1, '等級を入力してください'),
+  managerId: z.string().optional(),
 });
 
 export interface AccountFormState {
@@ -41,30 +51,61 @@ export async function createAccount(
     email: formData.get('email'),
     password: formData.get('password'),
     role: formData.get('role'),
-    employeeId: formData.get('employeeId') || undefined,
+    employeeNumber: formData.get('employeeNumber'),
+    name: formData.get('name'),
+    department: formData.get('department'),
+    position: formData.get('position'),
+    grade: formData.get('grade'),
+    managerId: formData.get('managerId') || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { email, password, role, employeeId } = parsed.data;
+  const { email, password, role, employeeNumber, name, department, position, grade, managerId } = parsed.data;
   const passwordHash = await hashPassword(password);
 
   try {
-    const user = await prisma.user.create({
-      data: { email, passwordHash, role },
-    });
-
-    if (employeeId) {
-      await prisma.employee.update({
-        where: { id: employeeId },
-        data: { userId: user.id },
+    await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: { email, passwordHash, role },
       });
-    }
+
+      // Check if employee with this number already exists
+      const existingEmployee = await tx.employee.findUnique({
+        where: { employeeNumber },
+      });
+
+      if (existingEmployee) {
+        if (existingEmployee.userId) {
+          throw new Error('EMPLOYEE_LINKED');
+        }
+        // Link and update existing unlinked employee
+        await tx.employee.update({
+          where: { id: existingEmployee.id },
+          data: { name, department, position, grade, email, managerId: managerId || null, userId: newUser.id },
+        });
+      } else {
+        await tx.employee.create({
+          data: { employeeNumber, name, department, position, grade, email, managerId: managerId || null, userId: newUser.id },
+        });
+      }
+    });
   } catch (e: unknown) {
-    if (e instanceof Error && e.message.includes('Unique constraint')) {
-      return { error: 'このメールアドレスは既に使用されています' };
+    if (e instanceof Error) {
+      if (e.message === 'EMPLOYEE_LINKED') {
+        return { error: 'この社員番号は既に別のアカウントに紐付けられています' };
+      }
+      if (e.message.includes('Unique constraint')) {
+        if (e.message.includes('email')) {
+          return { error: 'このメールアドレスは既に使用されています' };
+        }
+        if (e.message.includes('employeeNumber')) {
+          return { error: 'この社員番号は既に使用されています' };
+        }
+        return { error: 'メールアドレスまたは社員番号が重複しています' };
+      }
     }
     return { error: 'アカウントの作成に失敗しました' };
   }
@@ -83,37 +124,74 @@ export async function updateAccount(
   const parsed = updateAccountSchema.safeParse({
     email: formData.get('email'),
     role: formData.get('role'),
-    employeeId: formData.get('employeeId') || undefined,
+    employeeNumber: formData.get('employeeNumber'),
+    name: formData.get('name'),
+    department: formData.get('department'),
+    position: formData.get('position'),
+    grade: formData.get('grade'),
+    managerId: formData.get('managerId') || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
 
-  const { email, role, employeeId } = parsed.data;
+  const { email, role, employeeNumber, name, department, position, grade, managerId } = parsed.data;
 
   try {
-    await prisma.user.update({
-      where: { id },
-      data: { email, role },
-    });
-
-    // Unlink previous employee if any
-    await prisma.employee.updateMany({
-      where: { userId: id },
-      data: { userId: null },
-    });
-
-    // Link new employee if specified
-    if (employeeId) {
-      await prisma.employee.update({
-        where: { id: employeeId },
-        data: { userId: id },
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: { email, role },
       });
-    }
+
+      // Check if user already has a linked employee
+      const linkedEmployee = await tx.employee.findUnique({
+        where: { userId: id },
+      });
+
+      if (linkedEmployee) {
+        // Check employeeNumber conflict if changed
+        if (linkedEmployee.employeeNumber !== employeeNumber) {
+          const conflict = await tx.employee.findUnique({ where: { employeeNumber } });
+          if (conflict) {
+            throw new Error('EMPLOYEE_NUMBER_CONFLICT');
+          }
+        }
+        // Update linked employee
+        await tx.employee.update({
+          where: { id: linkedEmployee.id },
+          data: { employeeNumber, name, department, position, grade, email, managerId: managerId || null },
+        });
+      } else {
+        // No linked employee — create or link
+        const existingEmployee = await tx.employee.findUnique({ where: { employeeNumber } });
+        if (existingEmployee) {
+          if (existingEmployee.userId) {
+            throw new Error('EMPLOYEE_LINKED');
+          }
+          await tx.employee.update({
+            where: { id: existingEmployee.id },
+            data: { name, department, position, grade, email, managerId: managerId || null, userId: id },
+          });
+        } else {
+          await tx.employee.create({
+            data: { employeeNumber, name, department, position, grade, email, managerId: managerId || null, userId: id },
+          });
+        }
+      }
+    });
   } catch (e: unknown) {
-    if (e instanceof Error && e.message.includes('Unique constraint')) {
-      return { error: 'このメールアドレスは既に使用されています' };
+    if (e instanceof Error) {
+      if (e.message === 'EMPLOYEE_LINKED') {
+        return { error: 'この社員番号は既に別のアカウントに紐付けられています' };
+      }
+      if (e.message === 'EMPLOYEE_NUMBER_CONFLICT') {
+        return { error: 'この社員番号は既に使用されています' };
+      }
+      if (e.message.includes('Unique constraint')) {
+        return { error: 'メールアドレスまたは社員番号が重複しています' };
+      }
     }
     return { error: 'アカウントの更新に失敗しました' };
   }

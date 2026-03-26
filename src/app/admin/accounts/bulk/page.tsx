@@ -11,6 +11,10 @@ interface AccountRow {
   email: string;
   role: string;
   employeeNumber: string;
+  name: string;
+  department: string;
+  position: string;
+  grade: string;
 }
 
 interface BulkResult {
@@ -27,8 +31,12 @@ function parseCSV(text: string): AccountRow[] {
   const emailIdx = header.indexOf('email');
   const roleIdx = header.indexOf('role');
   const empIdx = header.findIndex((h) => h === 'employeenumber' || h === 'employee_number');
+  const nameIdx = header.indexOf('name');
+  const deptIdx = header.indexOf('department');
+  const posIdx = header.indexOf('position');
+  const gradeIdx = header.indexOf('grade');
 
-  if (emailIdx === -1 || roleIdx === -1) return [];
+  if (emailIdx === -1 || roleIdx === -1 || empIdx === -1 || nameIdx === -1 || deptIdx === -1 || posIdx === -1 || gradeIdx === -1) return [];
 
   return lines.slice(1)
     .filter((line) => line.trim())
@@ -37,10 +45,14 @@ function parseCSV(text: string): AccountRow[] {
       return {
         email: cols[emailIdx] || '',
         role: cols[roleIdx] || 'employee',
-        employeeNumber: empIdx !== -1 ? cols[empIdx] || '' : '',
+        employeeNumber: cols[empIdx] || '',
+        name: cols[nameIdx] || '',
+        department: cols[deptIdx] || '',
+        position: cols[posIdx] || '',
+        grade: cols[gradeIdx] || '',
       };
     })
-    .filter((row) => row.email);
+    .filter((row) => row.email && row.employeeNumber && row.name);
 }
 
 export default function BulkAccountsPage() {
@@ -64,7 +76,7 @@ export default function BulkAccountsPage() {
       const text = ev.target?.result as string;
       const parsed = parseCSV(text);
       if (parsed.length === 0) {
-        setError('CSVの形式が正しくありません。email, role のカラムが必要です。');
+        setError('CSVの形式が正しくありません。必須カラム: email, role, employeeNumber, name, department, position, grade');
         setAccounts([]);
         return;
       }
@@ -123,7 +135,7 @@ export default function BulkAccountsPage() {
           <CardHeader>
             <CardTitle>CSVファイル</CardTitle>
             <CardDescription>
-              カラム: email, role, employeeNumber（任意）。roleは admin / manager / employee のいずれか。
+              必須カラム: email, role, employeeNumber, name, department, position, grade。roleは admin / manager / employee のいずれか。
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -166,18 +178,26 @@ export default function BulkAccountsPage() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-2 px-2">#</th>
-                      <th className="text-left py-2 px-2">メール</th>
-                      <th className="text-left py-2 px-2">ロール</th>
                       <th className="text-left py-2 px-2">社員番号</th>
+                      <th className="text-left py-2 px-2">氏名</th>
+                      <th className="text-left py-2 px-2">メール</th>
+                      <th className="text-left py-2 px-2">部署</th>
+                      <th className="text-left py-2 px-2">役職</th>
+                      <th className="text-left py-2 px-2">等級</th>
+                      <th className="text-left py-2 px-2">ロール</th>
                     </tr>
                   </thead>
                   <tbody>
                     {accounts.slice(0, 20).map((row, i) => (
                       <tr key={i} className="border-b">
                         <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
+                        <td className="py-1 px-2">{row.employeeNumber}</td>
+                        <td className="py-1 px-2">{row.name}</td>
                         <td className="py-1 px-2">{row.email}</td>
+                        <td className="py-1 px-2">{row.department}</td>
+                        <td className="py-1 px-2">{row.position}</td>
+                        <td className="py-1 px-2">{row.grade}</td>
                         <td className="py-1 px-2">{row.role}</td>
-                        <td className="py-1 px-2">{row.employeeNumber || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

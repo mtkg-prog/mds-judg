@@ -60,6 +60,22 @@ export function ScoreResult({ result }: ScoreResultProps) {
         </CardContent>
       </Card>
 
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <p className="font-medium">この判定結果は参考値です</p>
+        <p className="mt-2 text-xs">
+          ここで表示されるグレード・ポイントはAIによるミッション内容の採点に基づく参考値であり、最終的なグレードを確定するものではありません。
+          実際のグレードは、以下を含むさまざまな要素を総合的に考慮して決定されます。
+        </p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <li>売り上げや利益の規模</li>
+          <li>マネジメントの規模</li>
+          <li>前年比や苦戦しているエリアの立て直し</li>
+          <li>その他のミッションの難易度</li>
+          <li>360度評価</li>
+          <li>その他、会社が定める評価基準</li>
+        </ul>
+      </div>
+
       {result.missions.map((mission, index) => (
         <Card key={index}>
           <CardHeader>

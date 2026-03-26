@@ -4,8 +4,7 @@ import { AccountForm } from '@/components/admin/account-form';
 import { Button } from '@/components/ui/button';
 
 export default async function NewAccountPage() {
-  const unlinkedEmployees = await prisma.employee.findMany({
-    where: { userId: null },
+  const employees = await prisma.employee.findMany({
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   });
@@ -19,7 +18,7 @@ export default async function NewAccountPage() {
           </Button>
         </Link>
       </div>
-      <AccountForm unlinkedEmployees={unlinkedEmployees} />
+      <AccountForm employees={employees} />
     </div>
   );
 }

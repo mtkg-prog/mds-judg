@@ -10,7 +10,9 @@ export async function proxy(request: NextRequest) {
   // --- Access gate: shared key ---
   const ACCESS_KEY = process.env.ACCESS_KEY;
   if (ACCESS_KEY && !pathname.startsWith('/api/internal/')) {
-    const hasAccess = request.cookies.get('access_granted')?.value === ACCESS_KEY;
+    const hasAccess =
+      request.cookies.get('access_granted')?.value === ACCESS_KEY ||
+      request.cookies.has('session');
 
     if (!hasAccess) {
       const keyParam = request.nextUrl.searchParams.get('access_key');

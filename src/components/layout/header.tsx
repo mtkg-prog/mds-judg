@@ -40,13 +40,13 @@ export function Header() {
         <Link href="/" className="font-bold text-lg">
           MDS AI判定
         </Link>
-        <nav className="hidden md:flex gap-4">
+        <nav className="hidden lg:flex gap-4">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'text-sm transition-colors hover:text-foreground',
+                'text-sm whitespace-nowrap transition-colors hover:text-foreground',
                 pathname === item.href
                   ? 'text-foreground font-medium'
                   : 'text-muted-foreground',
@@ -70,7 +70,7 @@ export function Header() {
           )}
         </nav>
         {user && (
-          <div className="ml-auto hidden md:flex items-center gap-3">
+          <div className="ml-auto hidden lg:flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
               {user.employeeName || user.email}
               <span className="ml-1 text-xs px-1.5 py-0.5 bg-gray-100 rounded">
@@ -87,7 +87,7 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          className="ml-auto md:hidden"
+          className="ml-auto lg:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="メニュー"
         >
@@ -108,7 +108,7 @@ export function Header() {
         </Button>
       </div>
       {menuOpen && (
-        <div className="border-t md:hidden px-4 pb-4 space-y-2">
+        <div className="border-t lg:hidden px-4 pb-4 space-y-2">
           <nav className="flex flex-col gap-1 pt-3">
             {navItems.map((item) => (
               <Link
