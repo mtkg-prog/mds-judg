@@ -14,15 +14,39 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { action, email, name, passwordHash, role } = await request.json();
+    const { action, email, name, passwordHash, role, employeeCode } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: "email is required" }, { status: 400 });
     }
 
     if (action === "create") {
-      const existing = await prisma.user.findUnique({ where: { email } });
+      const existing = await prisma.user.findUnique({
+        where: { email },
+        include: { employee: true },
+      });
+
       if (existing) {
+        // User は存在するが Employee が無い場合は Employee を作成
+        if (!existing.employee) {
+          const empNumber = employeeCode || email.split("@")[0];
+          // employeeNumber 重複チェック
+          const empExists = await prisma.employee.findUnique({ where: { employeeNumber: empNumber } });
+          if (!empExists) {
+            await prisma.employee.create({
+              data: {
+                employeeNumber: empNumber,
+                name: name || email.split("@")[0],
+                department: "",
+                position: "",
+                grade: "",
+                email,
+                userId: existing.id,
+              },
+            });
+            return NextResponse.json({ status: "updated", detail: "employee created" });
+          }
+        }
         return NextResponse.json({ status: "skipped", reason: "already exists" });
       }
 
@@ -30,7 +54,7 @@ export async function POST(request: NextRequest) {
       // パスワードがない場合はダミーハッシュを生成
       const hash = passwordHash || await hashPassword(crypto.randomUUID());
 
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           email,
           passwordHash: hash,
@@ -38,6 +62,23 @@ export async function POST(request: NextRequest) {
           mustChangePassword: true,
         },
       });
+
+      // Employee レコードも作成
+      const empNumber = employeeCode || email.split("@")[0];
+      const empExists = await prisma.employee.findUnique({ where: { employeeNumber: empNumber } });
+      if (!empExists) {
+        await prisma.employee.create({
+          data: {
+            employeeNumber: empNumber,
+            name: name || email.split("@")[0],
+            department: "",
+            position: "",
+            grade: "",
+            email,
+            userId: newUser.id,
+          },
+        });
+      }
 
       return NextResponse.json({ status: "created" }, { status: 201 });
     }
