@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { verifyToken, SESSION_COOKIE } from '@/lib/carrier-auth/session';
 
-const PUBLIC_PATHS = ['/login', '/api/health', '/api/setup', '/api/internal/'];
+const AUTH_PROVIDER = process.env.AUTH_PROVIDER || 'legacy';
+
+const LEGACY_PUBLIC_PATHS = ['/login', '/api/health', '/api/setup', '/api/internal/'];
+const CARRIER_PUBLIC_PATHS = ['/login', '/api/auth/carrier', '/api/health', '/api/setup', '/api/internal/', '/change-password'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,7 +16,8 @@ export async function proxy(request: NextRequest) {
   if (ACCESS_KEY && !pathname.startsWith('/api/internal/')) {
     const hasAccess =
       request.cookies.get('access_granted')?.value === ACCESS_KEY ||
-      request.cookies.has('session');
+      request.cookies.has('session') ||
+      request.cookies.has(SESSION_COOKIE);
 
     if (!hasAccess) {
       const keyParam = request.nextUrl.searchParams.get('access_key');
@@ -39,8 +44,61 @@ export async function proxy(request: NextRequest) {
   }
   // --- End access gate ---
 
+  if (AUTH_PROVIDER === 'carrier') {
+    return handleCarrierAuth(request, pathname);
+  }
+
+  return handleLegacyAuth(request, pathname);
+}
+
+/**
+ * CarrierAuth: verify carrier_session cookie via JWT
+ */
+async function handleCarrierAuth(request: NextRequest, pathname: string) {
+  // Public paths
   if (
-    PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
+    CARRIER_PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/favicon.ico')
+  ) {
+    return NextResponse.next();
+  }
+
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) {
+    return handleUnauthenticated(request, pathname);
+  }
+
+  const secret = process.env.JWT_SECRET || process.env.CARRIER_AUTH_JWT_SECRET;
+  if (!secret) {
+    console.error('CarrierAuth: JWT_SECRET is not configured');
+    return handleUnauthenticated(request, pathname);
+  }
+
+  const session = await verifyToken(token, secret);
+  if (!session || !session.isActive) {
+    return handleUnauthenticated(request, pathname);
+  }
+
+  // Admin path check (CarrierAuth role is global; app role is checked server-side)
+  return NextResponse.next();
+}
+
+function handleUnauthenticated(request: NextRequest, pathname: string) {
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: '未認証' }, { status: 401 });
+  }
+  const loginUrl = new URL('/login', request.url);
+  loginUrl.searchParams.set('redirect_to', pathname);
+  return NextResponse.redirect(loginUrl);
+}
+
+/**
+ * Legacy auth: verify session JWT cookie
+ */
+async function handleLegacyAuth(request: NextRequest, pathname: string) {
+  if (
+    LEGACY_PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon.ico')
   ) {

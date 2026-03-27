@@ -6,6 +6,7 @@ import type { SessionPayload, AuthUser, UserRole } from './types';
 
 const SESSION_COOKIE = 'session';
 const SESSION_EXPIRY_HOURS = 24;
+const AUTH_PROVIDER = process.env.AUTH_PROVIDER || 'legacy';
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -53,7 +54,99 @@ export async function createSession(userId: string, role: UserRole, mustChangePa
   });
 }
 
+/**
+ * Get current session. Supports both legacy JWT and CarrierAuth.
+ */
 export async function getSession(): Promise<AuthUser | null> {
+  if (AUTH_PROVIDER === 'carrier') {
+    return getCarrierSessionAsAuthUser();
+  }
+  return getLegacySession();
+}
+
+/**
+ * CarrierAuth session: verify carrier_session cookie, look up or create local User + Employee
+ */
+async function getCarrierSessionAsAuthUser(): Promise<AuthUser | null> {
+  const { getCarrierSession } = await import('@/lib/carrier-auth');
+  const carrier = await getCarrierSession();
+  if (!carrier) return null;
+
+  let user = await prisma.user.findUnique({
+    where: { email: carrier.email },
+    include: { employee: true },
+  });
+
+  if (!user) {
+    // ローカルUserが未登録 → 自動作成（User + Employee）
+    const roleMap: Record<string, string> = { admin: 'admin', user: 'employee' };
+    user = await prisma.user.create({
+      data: {
+        email: carrier.email,
+        passwordHash: '',
+        role: roleMap[carrier.role] || 'employee',
+        mustChangePassword: false,
+        employee: {
+          create: {
+            employeeNumber: carrier.email.split('@')[0],
+            name: carrier.name || carrier.email.split('@')[0],
+            email: carrier.email,
+            department: carrier.departmentName || '',
+            position: carrier.position || '',
+            grade: '',
+          },
+        },
+      },
+      include: { employee: true },
+    });
+  } else if (user.employee) {
+    // ローカルEmployeeが存在 → CareerAuthの情報で同期更新
+    const updates: Record<string, string> = {};
+    if (carrier.name && carrier.name !== user.employee.name) updates.name = carrier.name;
+    if (carrier.departmentName && carrier.departmentName !== user.employee.department) updates.department = carrier.departmentName;
+    if (carrier.position && carrier.position !== user.employee.position) updates.position = carrier.position;
+
+    if (Object.keys(updates).length > 0) {
+      await prisma.employee.update({
+        where: { id: user.employee.id },
+        data: updates,
+      });
+      // 更新後のデータを再取得
+      user = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { employee: true },
+      }) || user;
+    }
+  } else {
+    // Userはあるが Employeeがない → Employee作成
+    const emp = await prisma.employee.create({
+      data: {
+        employeeNumber: carrier.email.split('@')[0],
+        name: carrier.name || carrier.email.split('@')[0],
+        email: carrier.email,
+        department: carrier.departmentName || '',
+        position: carrier.position || '',
+        grade: '',
+        userId: user.id,
+      },
+    });
+    user = { ...user, employee: emp };
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role as UserRole,
+    mustChangePassword: false,
+    employeeId: user.employee?.id,
+    employeeName: user.employee?.name,
+  };
+}
+
+/**
+ * Legacy JWT session
+ */
+async function getLegacySession(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;

@@ -2,17 +2,45 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/components/providers/session-provider';
 import { logout } from '@/app/actions/auth';
 import { Button } from '@/components/ui/button';
+
+const AUTH_PROVIDER = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'legacy';
 
 const ROLE_LABEL: Record<string, string> = {
   admin: '管理者',
   manager: '上長',
   employee: '社員',
 };
+
+function LogoutButton() {
+  const router = useRouter();
+
+  if (AUTH_PROVIDER === 'carrier') {
+    const handleLogout = async () => {
+      await fetch('/api/auth/carrier/logout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    };
+
+    return (
+      <Button variant="outline" size="sm" type="button" onClick={handleLogout}>
+        ログアウト
+      </Button>
+    );
+  }
+
+  return (
+    <form action={logout}>
+      <Button variant="outline" size="sm" type="submit">
+        ログアウト
+      </Button>
+    </form>
+  );
+}
 
 export function Header() {
   const pathname = usePathname();
@@ -77,11 +105,7 @@ export function Header() {
                 {ROLE_LABEL[user.role] || user.role}
               </span>
             </span>
-            <form action={logout}>
-              <Button variant="outline" size="sm" type="submit">
-                ログアウト
-              </Button>
-            </form>
+            <LogoutButton />
           </div>
         )}
         <Button
@@ -145,11 +169,7 @@ export function Header() {
                   {ROLE_LABEL[user.role] || user.role}
                 </span>
               </span>
-              <form action={logout}>
-                <Button variant="outline" size="sm" type="submit">
-                  ログアウト
-                </Button>
-              </form>
+              <LogoutButton />
             </div>
           )}
         </div>
