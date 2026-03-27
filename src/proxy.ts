@@ -69,7 +69,7 @@ async function handleCarrierAuth(request: NextRequest, pathname: string) {
     return handleUnauthenticated(request, pathname);
   }
 
-  const secret = process.env.JWT_SECRET || process.env.CARRIER_AUTH_JWT_SECRET;
+  const secret = process.env.CARRIER_AUTH_JWT_SECRET || process.env.JWT_SECRET;
   if (!secret) {
     console.error('CarrierAuth: JWT_SECRET is not configured');
     return handleUnauthenticated(request, pathname);

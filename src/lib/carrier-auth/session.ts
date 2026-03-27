@@ -43,7 +43,7 @@ export async function getCarrierSession(): Promise<CarrierUser | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const secret = process.env.JWT_SECRET || process.env.CARRIER_AUTH_JWT_SECRET;
+  const secret = process.env.CARRIER_AUTH_JWT_SECRET || process.env.JWT_SECRET;
   if (!secret) {
     throw new Error(
       "CarrierAuth SDK: JWT_SECRET or CARRIER_AUTH_JWT_SECRET must be set"
