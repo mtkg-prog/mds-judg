@@ -47,6 +47,9 @@ export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardP
         {dimensions.map((dim) => (
           <div key={dim.key}>
             <div className="text-sm text-muted-foreground mb-1">{dim.label}</div>
+            {dim.description && (
+              <div className="text-xs text-muted-foreground mb-1">{dim.description}</div>
+            )}
             <ScoreBar score={category.averageScores[dim.key] ?? 0} />
           </div>
         ))}
