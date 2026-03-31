@@ -104,6 +104,13 @@ export function ScoreResult({ result }: ScoreResultProps) {
                   <p className="text-sm font-medium text-muted-foreground">AIコメント</p>
                   <p className="mt-1">{mission.scores.comment}</p>
                 </div>
+
+                {mission.scores.advice && (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+                    <p className="text-sm font-medium text-blue-700">レベルアップのヒント</p>
+                    <p className="mt-1 text-sm text-blue-900">{mission.scores.advice}</p>
+                  </div>
+                )}
               </>
             )}
           </CardContent>

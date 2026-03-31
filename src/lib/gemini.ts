@@ -49,6 +49,9 @@ export async function callGeminiForScoring(prompt: string): Promise<{
     const text = json.candidates[0].content.parts[0].text;
     const cleaned = cleanJsonText(text);
     const parsed: AIScoreResult = JSON.parse(cleaned);
+    if (!parsed.advice) {
+      parsed.advice = '';
+    }
 
     return { success: true, data: parsed };
   } catch (e) {

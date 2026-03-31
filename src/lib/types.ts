@@ -27,6 +27,7 @@ export interface AIScoreResult {
   roleLevel: number;
   feasibility: number;
   comment: string;
+  advice?: string;
 }
 
 export interface ScoringRequest {

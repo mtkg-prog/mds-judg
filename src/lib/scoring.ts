@@ -1,11 +1,37 @@
-import type { AIScoreResult, MissionInput } from './types';
+import type { AIScoreResult, MissionInput, PositionGroup } from './types';
 import { roundToTwo } from './utils';
+import { normalizePositionGroup } from './aggregation';
 
-export function buildScoringPrompt(inputData: MissionInput): string {
+function getPositionGroupContext(position?: string): { groupLabel: string; groupDescription: string } {
+  if (!position) return { groupLabel: '不明', groupDescription: '' };
+  const group = normalizePositionGroup(position);
+  const descriptions: Record<PositionGroup, { label: string; desc: string }> = {
+    groupA: { label: 'Aグループ', desc: '担当・チーフ・支店長代理レベル：実務の中心として、自ら手を動かし具体的な成果を出すことが期待される' },
+    groupL: { label: 'Lグループ', desc: '支店長・課長レベル：チーム・部門の責任者として、自ら意思決定と実行をリードすることが期待される' },
+    groupU: { label: 'Uグループ', desc: '支社長・ユニットマネージャーレベル：複数チームを統括し、組織横断的な課題解決が期待される' },
+    groupG: { label: 'Gグループ', desc: '統括・グループマネージャーレベル：事業全体の方向性を左右する戦略的な取り組みが期待される' },
+    groupD: { label: 'Dグループ', desc: '本部長・ディビジョンマネージャーレベル：経営レベルの意思決定と全社的なインパクトが期待される' },
+  };
+  const d = descriptions[group];
+  return { groupLabel: d.label, groupDescription: d.desc };
+}
+
+export function buildScoringPrompt(inputData: MissionInput, position?: string): string {
+  const { groupLabel, groupDescription } = getPositionGroupContext(position);
+  const positionSection = position ? `
+【提出者情報】
+この提出者の役職は「${position}」（${groupLabel}）です。
+${groupDescription}
+採点時、この役職に対する期待水準を考慮してください。上位役職ほど、以下が求められます：
+- より広い影響範囲（scope）
+- より高い主体的関与（roleLevel）
+- より戦略的・組織的な視点（contribution, innovation）
+` : '';
+
   return `
 あなたは人事評価制度の厳格な採点官です。
 以下の提出フォーマットをもとに、各項目を1〜10点で**厳しく**採点してください。
-
+${positionSection}
 【重要な採点方針】
 - あなたは甘い採点を絶対にしてはいけません。厳格かつ保守的に採点してください。
 - 5点が「標準的なミッション」の基準です。大半のミッションは4〜6点に収まるべきです。
@@ -82,7 +108,16 @@ export function buildScoringPrompt(inputData: MissionInput): string {
 - 点数は必ず1〜10の整数
 - 6項目の平均が6.0を大きく超える場合は、採点が甘すぎないか再確認してください
 - JSONキーは必ず次の通り:
-difficulty, scope, innovation, contribution, roleLevel, feasibility, comment
+difficulty, scope, innovation, contribution, roleLevel, feasibility, comment, advice
+
+【アドバイス出力ルール】
+- adviceは300文字以内の日本語で書いてください
+- あなたは「育成コーチ」として、スコアアップのためのヒントを与えてください
+- 具体的な文章を書いてあげるのではなく、「どの観点を深めるとよいか」「どの程度の挑戦レベルが求められるか」を示唆してください
+- 最もスコアが伸びる余地のある項目（ウェイトが高く、かつ現在のスコアが低い項目）に焦点を当ててください
+- 役職に応じた期待値を踏まえて書いてください（上位役職ほど、より戦略的・組織横断的な視点が求められます）
+- 「〜を書いてください」ではなく「〜の視点があると評価が上がりやすい」のような間接的な表現を使ってください
+- 答えそのものを教えるのではなく、考える方向性を示してください
 
 【出力形式】
 {
@@ -92,7 +127,8 @@ difficulty, scope, innovation, contribution, roleLevel, feasibility, comment
   "contribution": 1,
   "roleLevel": 1,
   "feasibility": 1,
-  "comment": "..."
+  "comment": "...",
+  "advice": "..."
 }
 
 【提出内容】
