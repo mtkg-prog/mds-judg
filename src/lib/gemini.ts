@@ -27,7 +27,10 @@ export async function callGeminiForScoring(prompt: string): Promise<{
           { text: prompt }
         ]
       }
-    ]
+    ],
+    generationConfig: {
+      temperature: 0,
+    },
   };
 
   try {
