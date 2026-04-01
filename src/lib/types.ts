@@ -1,5 +1,12 @@
 export type PositionGroup = 'groupA' | 'groupL' | 'groupU' | 'groupG' | 'groupD';
 
+export type DepartmentType = 'business' | 'indirect';
+
+export const DEPARTMENT_TYPES = [
+  { value: 'business' as const, label: '事業部門（営業・事業推進など）' },
+  { value: 'indirect' as const, label: '間接部門（人事・経理・IT・法務・事業部門内の間接業務など）' },
+] as const;
+
 export const POSITIONS = [
   '担当', 'チーフ', '支店長代理',
   '支店長', '課長',
@@ -32,6 +39,7 @@ export interface AIScoreResult {
 
 export interface ScoringRequest {
   position: string;
+  departmentType?: DepartmentType;
   mission: MissionInput;
 }
 

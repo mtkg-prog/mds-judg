@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { POSITIONS, type MissionInput, type Position } from '@/lib/types';
+import { DEPARTMENT_TYPES, POSITIONS, type DepartmentType, type MissionInput, type Position } from '@/lib/types';
 
 const MIN_CHAR_M1 = 10;
 const MIN_CHAR_DETAIL = 30;
@@ -30,7 +30,7 @@ function createEmptyMission(): MissionFormData {
 }
 
 interface CheckFormProps {
-  onSubmit: (position: Position, missions: MissionInput[]) => void;
+  onSubmit: (position: Position, departmentType: DepartmentType, missions: MissionInput[]) => void;
   isLoading: boolean;
 }
 
@@ -46,6 +46,7 @@ function CharCount({ value, min }: { value: string; min: number }) {
 
 export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
   const [position, setPosition] = useState<Position | ''>('');
+  const [departmentType, setDepartmentType] = useState<DepartmentType | ''>('');
   const [missions, setMissions] = useState<MissionFormData[]>([createEmptyMission()]);
 
   const totalWeight = missions.reduce((sum, m) => sum + (m.weight || 0), 0);
@@ -76,9 +77,9 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!position) return;
+    if (!position || !departmentType) return;
     const missionInputs: MissionInput[] = missions.map(({ id: _id, ...rest }) => rest);
-    onSubmit(position as Position, missionInputs);
+    onSubmit(position as Position, departmentType as DepartmentType, missionInputs);
   }
 
   return (
@@ -97,6 +98,19 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
               <SelectContent>
                 {POSITIONS.map(p => (
                   <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="departmentType">部門種別</Label>
+            <Select value={departmentType} onValueChange={(v) => setDepartmentType(v as DepartmentType)}>
+              <SelectTrigger id="departmentType">
+                <SelectValue placeholder="部門種別を選択" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEPARTMENT_TYPES.map(dt => (
+                  <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -251,7 +265,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
         type="submit"
         size="lg"
         className="w-full"
-        disabled={isLoading || !position || totalWeight !== 100 || !allFieldsValid}
+        disabled={isLoading || !position || !departmentType || totalWeight !== 100 || !allFieldsValid}
       >
         {isLoading ? 'AI採点中...' : 'AI採点を実行'}
       </Button>

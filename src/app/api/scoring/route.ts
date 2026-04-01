@@ -39,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScoringRe
       }
     }
 
-    const prompt = buildScoringPrompt(mission, body.position);
+    const prompt = buildScoringPrompt(mission, body.position, body.departmentType);
     const result = await callGeminiForScoring(prompt);
 
     if (!result.success || !result.data) {

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CheckForm } from '@/components/check/check-form';
 import { ScoreResult } from '@/components/check/score-result';
-import type { CheckResult, GradeResult, MissionInput, MissionWithScore, Position, ScoringResponse } from '@/lib/types';
+import type { CheckResult, DepartmentType, GradeResult, MissionInput, MissionWithScore, Position, ScoringResponse } from '@/lib/types';
 import { roundToTwo } from '@/lib/utils';
 
 export default function CheckPage() {
@@ -11,7 +11,7 @@ export default function CheckPage() {
   const [result, setResult] = useState<CheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(position: Position, missions: MissionInput[]) {
+  async function handleSubmit(position: Position, departmentType: DepartmentType, missions: MissionInput[]) {
     setIsLoading(true);
     setResult(null);
     setError(null);
@@ -23,7 +23,7 @@ export default function CheckPage() {
         const res = await fetch('/api/scoring', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ position, mission }),
+          body: JSON.stringify({ position, departmentType, mission }),
         });
 
         const data: ScoringResponse = await res.json();
