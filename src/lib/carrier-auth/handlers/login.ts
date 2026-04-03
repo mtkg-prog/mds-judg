@@ -27,7 +27,9 @@ export function handleLogin(request: NextRequest) {
     access_type: "offline",
     state: redirectTo,
     prompt: "consent",
-    ...(config.allowedDomain ? { hd: config.allowedDomain } : {}),
+    ...(config.allowedDomain && !config.allowedDomain.includes(",")
+      ? { hd: config.allowedDomain.trim() }
+      : {}),
   });
 
   return NextResponse.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`);

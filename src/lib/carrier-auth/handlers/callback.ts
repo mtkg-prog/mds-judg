@@ -64,10 +64,14 @@ export async function handleCallback(request: NextRequest) {
 
     const googleUser = await userRes.json();
 
-    // 3. ドメイン検証
+    // 3. ドメイン検証（カンマ区切りで複数ドメイン対応）
     if (config.allowedDomain) {
+      const allowed = config.allowedDomain
+        .split(",")
+        .map((d) => d.trim().toLowerCase())
+        .filter(Boolean);
       const domain = googleUser.email.split("@")[1]?.toLowerCase();
-      if (domain !== config.allowedDomain.toLowerCase()) {
+      if (!allowed.includes(domain ?? "")) {
         return NextResponse.redirect(
           `${appUrl}${loginPath}?error=domain_not_allowed`
         );
