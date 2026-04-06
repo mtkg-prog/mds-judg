@@ -45,10 +45,8 @@ export async function proxy(request: NextRequest) {
       }
 
       if (!pathname.startsWith('/_next/') && !pathname.startsWith('/favicon.ico')) {
-        return new Response(
-          '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif"><h1>アクセスが制限されています</h1></body></html>',
-          { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
-        );
+        // 未認証ユーザーはログインページにリダイレクト
+        return NextResponse.redirect(new URL('/login', request.url));
       }
     }
   }
