@@ -8,12 +8,22 @@ const AUTH_PROVIDER = process.env.AUTH_PROVIDER || 'legacy';
 const LEGACY_PUBLIC_PATHS = ['/login', '/api/health', '/api/setup', '/api/internal/'];
 const CARRIER_PUBLIC_PATHS = ['/login', '/api/auth/carrier', '/api/health', '/api/setup', '/api/internal/', '/change-password'];
 
+// アクセスゲート用: 認証フローに必要なパスはゲートから除外する
+const ACCESS_GATE_PUBLIC_PATHS = [
+  '/login',
+  '/api/auth/carrier',
+  '/api/health',
+  '/api/setup',
+  '/api/internal/',
+  '/change-password',
+];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- Access gate: shared key ---
   const ACCESS_KEY = process.env.ACCESS_KEY;
-  if (ACCESS_KEY && !pathname.startsWith('/api/internal/')) {
+  if (ACCESS_KEY && !ACCESS_GATE_PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     const hasAccess =
       request.cookies.get('access_granted')?.value === ACCESS_KEY ||
       request.cookies.has('session') ||
