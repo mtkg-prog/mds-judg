@@ -49,7 +49,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScoringRe
       );
     }
 
-    const missionWeightedPoint = calculateMissionWeightedPoint(result.data, mission.weight);
+    const missionWeightedPoint = calculateMissionWeightedPoint(result.data, mission.weight, body.position);
 
     return NextResponse.json({
       success: true,
