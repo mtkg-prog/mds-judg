@@ -161,7 +161,7 @@ export interface Eval360AssignmentRow {
 }
 
 export interface Eval360Scores {
-  [dimensionKey: string]: number; // 1-5
+  [dimensionKey: string]: number; // 1-10
 }
 
 export interface Eval360AssignmentView {

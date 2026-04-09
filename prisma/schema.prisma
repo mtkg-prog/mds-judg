@@ -76,7 +76,7 @@ model EvaluationResponse {
   cycle        EvaluationCycle     @relation(fields: [cycleId], references: [id])
   evaluateeId  String
   relationship String
-  scores       String              // JSON: { "dimensionKey": 1-5, ... }
+  scores       String              // JSON: { "dimensionKey": 1-10, ... }
   comment      String              @default("")
   submittedAt  DateTime            @default(now())
 
