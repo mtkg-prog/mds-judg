@@ -14,24 +14,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-interface Assignment {
-  id: string;
-  relationship: string;
-  status: string;
-  evaluatee: { id: string; name: string; department: string };
-}
-
-interface EmployeeSummary {
-  id: string;
+interface ProgressEntry {
+  evaluateeId: string;
   name: string;
   department: string;
-  totalAssignments: number;
-  submittedCount: number;
+  total: number;
+  submitted: number;
 }
 
 export default function ResultsOverviewPage() {
   const { cycleId } = useParams<{ cycleId: string }>();
-  const [employees, setEmployees] = useState<EmployeeSummary[]>([]);
+  const [employees, setEmployees] = useState<ProgressEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,24 +33,8 @@ export default function ResultsOverviewPage() {
       const data = await res.json();
       if (!data.success) { setLoading(false); return; }
 
-      const map = new Map<string, EmployeeSummary>();
-      for (const a of data.assignments as Assignment[]) {
-        const key = a.evaluatee.id;
-        if (!map.has(key)) {
-          map.set(key, {
-            id: a.evaluatee.id,
-            name: a.evaluatee.name,
-            department: a.evaluatee.department,
-            totalAssignments: 0,
-            submittedCount: 0,
-          });
-        }
-        const emp = map.get(key)!;
-        emp.totalAssignments++;
-        if (a.status === 'submitted') emp.submittedCount++;
-      }
-
-      setEmployees(Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name)));
+      // 匿名性確保: APIから返される被評価者ごとの集計進捗のみ使用
+      setEmployees(data.progress as ProgressEntry[]);
       setLoading(false);
     }
     fetch_();
@@ -93,16 +70,16 @@ export default function ResultsOverviewPage() {
               </TableRow>
             )}
             {employees.map((emp) => (
-              <TableRow key={emp.id}>
+              <TableRow key={emp.evaluateeId}>
                 <TableCell>{emp.name}</TableCell>
                 <TableCell>{emp.department}</TableCell>
                 <TableCell>
-                  <Badge variant={emp.submittedCount === emp.totalAssignments ? 'default' : 'secondary'}>
-                    {emp.submittedCount} / {emp.totalAssignments}
+                  <Badge variant={emp.submitted === emp.total ? 'default' : 'secondary'}>
+                    {emp.submitted} / {emp.total}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/admin/360/${cycleId}/results/${emp.id}`}>
+                  <Link href={`/admin/360/${cycleId}/results/${emp.evaluateeId}`}>
                     <Button variant="outline" size="sm">結果</Button>
                   </Link>
                 </TableCell>

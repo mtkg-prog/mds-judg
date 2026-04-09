@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -16,7 +15,6 @@ import {
 interface Assignment {
   id: string;
   relationship: string;
-  status: string;
   evaluator: { id: string; name: string; department: string };
   evaluatee: { id: string; name: string; department: string };
 }
@@ -73,7 +71,6 @@ export default function AssignPage() {
                     <TableHead>評価者</TableHead>
                     <TableHead>部署</TableHead>
                     <TableHead>関係</TableHead>
-                    <TableHead>ステータス</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -82,13 +79,6 @@ export default function AssignPage() {
                       <TableCell>{a.evaluator.name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{a.evaluator.department}</TableCell>
                       <TableCell>{a.relationship}</TableCell>
-                      <TableCell>
-                        {a.status === 'submitted' ? (
-                          <Badge variant="default">回答済み</Badge>
-                        ) : (
-                          <Badge variant="secondary">未回答</Badge>
-                        )}
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

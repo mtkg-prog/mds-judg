@@ -23,7 +23,35 @@ export async function GET(
       orderBy: [{ evaluatee: { name: 'asc' } }, { relationship: 'asc' }],
     });
 
-    return NextResponse.json({ success: true, assignments });
+    // 匿名性確保: 評価者の身元と回答状況を分離して返す
+    // assignments には status を含めない（評価者名と紐付けさせない）
+    const sanitizedAssignments = assignments.map((a) => ({
+      id: a.id,
+      relationship: a.relationship,
+      evaluator: a.evaluator,
+      evaluatee: a.evaluatee,
+    }));
+
+    // 被評価者ごとの集計進捗のみ返す（個人の回答状況は含めない）
+    const progressMap = new Map<string, { evaluateeId: string; name: string; department: string; total: number; submitted: number }>();
+    for (const a of assignments) {
+      const key = a.evaluateeId;
+      if (!progressMap.has(key)) {
+        progressMap.set(key, {
+          evaluateeId: a.evaluatee.id,
+          name: a.evaluatee.name,
+          department: a.evaluatee.department,
+          total: 0,
+          submitted: 0,
+        });
+      }
+      const entry = progressMap.get(key)!;
+      entry.total++;
+      if (a.status === 'submitted') entry.submitted++;
+    }
+    const progress = Array.from(progressMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({ success: true, assignments: sanitizedAssignments, progress });
   } catch (e) {
     return NextResponse.json(
       { success: false, error: `割当取得エラー: ${e}` },
