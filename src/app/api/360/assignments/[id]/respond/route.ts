@@ -26,12 +26,12 @@ export async function POST(
       );
     }
 
-    // Validate scores are 1-5
+    // Validate scores are 1-10
     for (const [key, value] of Object.entries(scores)) {
       const num = Number(value);
-      if (!Number.isInteger(num) || num < 1 || num > 5) {
+      if (!Number.isInteger(num) || num < 1 || num > 10) {
         return NextResponse.json(
-          { success: false, error: `${key} のスコアは1-5の整数で指定してください` },
+          { success: false, error: `${key} のスコアは1-10の整数で指定してください` },
           { status: 400 }
         );
       }

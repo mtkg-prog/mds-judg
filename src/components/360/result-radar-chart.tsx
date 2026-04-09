@@ -53,7 +53,7 @@ export function ResultRadarChart({ result, dimensions }: ResultRadarChartProps) 
         <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%">
           <PolarGrid />
           <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 12 }} />
-          <PolarRadiusAxis domain={[0, 5]} tickCount={6} tick={{ fontSize: 10 }} />
+          <PolarRadiusAxis domain={[0, 10]} tickCount={6} tick={{ fontSize: 10 }} />
           {presentSeries.map((s) => (
             <Radar
               key={s.key}

@@ -23,7 +23,7 @@ export function EvaluationForm({
   const router = useRouter();
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
-    for (const dim of dimensions) init[dim.key] = 3;
+    for (const dim of dimensions) init[dim.key] = 5;
     return init;
   });
   const [comment, setComment] = useState('');
@@ -73,12 +73,12 @@ export function EvaluationForm({
               <Label className="text-sm font-medium">{dim.label}</Label>
               <p className="text-xs text-muted-foreground mb-2">{dim.description}</p>
               <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((val) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => (
                   <button
                     key={val}
                     type="button"
                     onClick={() => setScores((s) => ({ ...s, [dim.key]: val }))}
-                    className={`w-10 h-10 rounded-full border-2 text-sm font-medium transition-colors ${
+                    className={`w-8 h-8 rounded-full border-2 text-sm font-medium transition-colors ${
                       scores[dim.key] === val
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
@@ -88,7 +88,7 @@ export function EvaluationForm({
                   </button>
                 ))}
                 <span className="text-xs text-muted-foreground ml-2">
-                  1=低い 〜 5=高い
+                  1=低い 〜 10=高い
                 </span>
               </div>
             </div>

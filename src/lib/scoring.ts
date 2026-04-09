@@ -213,7 +213,7 @@ interface ScoreWeights {
 const SCORE_WEIGHTS_BY_GROUP: Record<PositionGroup, ScoreWeights> = {
   groupA: { difficulty: 0.15, scope: 0.10, innovation: 0.15, contribution: 0.15, roleLevel: 0.30, feasibility: 0.15 },
   groupL: { difficulty: 0.15, scope: 0.15, innovation: 0.15, contribution: 0.20, roleLevel: 0.20, feasibility: 0.15 },
-  groupU: { difficulty: 0.15, scope: 0.20, innovation: 0.15, contribution: 0.20, roleLevel: 0.15, feasibility: 0.15 },
+  groupU: { difficulty: 0.15, scope: 0.15, innovation: 0.25, contribution: 0.15, roleLevel: 0.15, feasibility: 0.15 },
   groupG: { difficulty: 0.15, scope: 0.25, innovation: 0.20, contribution: 0.25, roleLevel: 0.05, feasibility: 0.10 },
   groupD: { difficulty: 0.10, scope: 0.25, innovation: 0.20, contribution: 0.30, roleLevel: 0.05, feasibility: 0.10 },
 };

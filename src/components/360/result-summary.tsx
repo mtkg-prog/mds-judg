@@ -10,7 +10,7 @@ interface ResultSummaryProps {
 }
 
 function OverallScoreBar({ label, description, score }: { label: string; description: string; score: number }) {
-  const pct = (score / 5) * 100;
+  const pct = (score / 10) * 100;
   return (
     <div className="flex items-center gap-3">
       <div className="w-28 sm:w-36 shrink-0">
