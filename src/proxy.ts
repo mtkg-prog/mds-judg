@@ -7,11 +7,13 @@ const AUTH_PROVIDER = process.env.AUTH_PROVIDER || 'legacy';
 
 const LEGACY_PUBLIC_PATHS = ['/login', '/api/health', '/api/setup', '/api/internal/'];
 const CARRIER_PUBLIC_PATHS = ['/login', '/api/auth/carrier', '/api/health', '/api/setup', '/api/internal/', '/change-password'];
+const GOOGLE_PUBLIC_PATHS = ['/login', '/api/auth/google', '/api/health', '/api/setup', '/api/internal/', '/change-password'];
 
 // アクセスゲート用: 認証フローに必要なパスはゲートから除外する
 const ACCESS_GATE_PUBLIC_PATHS = [
   '/login',
   '/api/auth/carrier',
+  '/api/auth/google',
   '/api/health',
   '/api/setup',
   '/api/internal/',
@@ -54,6 +56,10 @@ export async function proxy(request: NextRequest) {
 
   if (AUTH_PROVIDER === 'carrier') {
     return handleCarrierAuth(request, pathname);
+  }
+
+  if (AUTH_PROVIDER === 'google') {
+    return handleGoogleAuth(request, pathname);
   }
 
   return handleLegacyAuth(request, pathname);
@@ -99,6 +105,47 @@ function handleUnauthenticated(request: NextRequest, pathname: string) {
   const loginUrl = new URL('/login', request.url);
   loginUrl.searchParams.set('redirect_to', pathname);
   return NextResponse.redirect(loginUrl);
+}
+
+/**
+ * Google OAuth: legacy と同じ session JWT を使用（パブリックパスのみ異なる）
+ */
+async function handleGoogleAuth(request: NextRequest, pathname: string) {
+  if (
+    GOOGLE_PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/favicon.ico')
+  ) {
+    return NextResponse.next();
+  }
+
+  const token = request.cookies.get('session')?.value;
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect_to', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', payload.userId as string);
+    requestHeaders.set('x-user-role', payload.role as string);
+
+    if (pathname.startsWith('/admin') && payload.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+  } catch {
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('session');
+    return response;
+  }
 }
 
 /**

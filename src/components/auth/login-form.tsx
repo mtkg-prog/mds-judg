@@ -17,7 +17,7 @@ const CARRIER_ERROR_MESSAGES: Record<string, string> = {
   not_admin: '管理者権限が必要です',
 };
 
-function CarrierLoginForm() {
+function OAuthLoginForm({ loginPath }: { loginPath: string }) {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const redirectTo = searchParams.get('redirect_to') || '/';
@@ -34,7 +34,7 @@ function CarrierLoginForm() {
           </p>
         )}
         <a
-          href={`/api/auth/carrier/login?redirect_to=${encodeURIComponent(redirectTo)}`}
+          href={`${loginPath}?redirect_to=${encodeURIComponent(redirectTo)}`}
           className="flex w-full items-center justify-center gap-3 rounded-md border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -111,8 +111,11 @@ function LegacyLoginForm() {
 }
 
 export function LoginForm() {
+  if (AUTH_PROVIDER === 'google') {
+    return <OAuthLoginForm loginPath="/api/auth/google/login" />;
+  }
   if (AUTH_PROVIDER === 'carrier') {
-    return <CarrierLoginForm />;
+    return <OAuthLoginForm loginPath="/api/auth/carrier/login" />;
   }
   return <LegacyLoginForm />;
 }
