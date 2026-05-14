@@ -25,7 +25,13 @@ export async function verifyPassword(
   return bcrypt.compare(password, hash);
 }
 
-export async function createSession(userId: string, role: UserRole, mustChangePassword = false): Promise<void> {
+/**
+ * セッショントークン作成（Cookie設定なし — Route Handler用）
+ * Session DBレコード作成 + JWT署名 → { token, expiresAt } を返す
+ */
+export async function createSessionToken(
+  userId: string, role: UserRole, mustChangePassword = false
+): Promise<{ token: string; expiresAt: Date }> {
   const expiresAt = new Date(Date.now() + SESSION_EXPIRY_HOURS * 60 * 60 * 1000);
 
   const session = await prisma.session.create({
@@ -43,6 +49,12 @@ export async function createSession(userId: string, role: UserRole, mustChangePa
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime(expiresAt)
     .sign(getJwtSecret());
+
+  return { token, expiresAt };
+}
+
+export async function createSession(userId: string, role: UserRole, mustChangePassword = false): Promise<void> {
+  const { token, expiresAt } = await createSessionToken(userId, role, mustChangePassword);
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
@@ -178,6 +190,64 @@ async function getLegacySession(): Promise<AuthUser | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Google OAuth ユーザーの find-or-create
+ * メールアドレスでUserを検索し、なければUser + Employeeを自動作成
+ */
+export async function findOrCreateGoogleUser(
+  email: string, name: string
+): Promise<{ userId: string; role: UserRole }> {
+  // 既存ユーザーを検索
+  let user = await prisma.user.findUnique({
+    where: { email },
+    include: { employee: true },
+  });
+
+  if (!user) {
+    // 新規ユーザー → User + Employee 自動作成
+    user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: '',
+        role: 'employee',
+        mustChangePassword: false,
+        employee: {
+          create: {
+            employeeNumber: email.split('@')[0],
+            name: name || email.split('@')[0],
+            email,
+            department: '',
+            position: '',
+            grade: '',
+          },
+        },
+      },
+      include: { employee: true },
+    });
+  } else if (user.employee && name && name !== user.employee.name) {
+    // 名前が変更されていれば同期更新
+    await prisma.employee.update({
+      where: { id: user.employee.id },
+      data: { name },
+    });
+  } else if (!user.employee) {
+    // Userはあるが Employeeがない → Employee作成
+    await prisma.employee.create({
+      data: {
+        employeeNumber: email.split('@')[0],
+        name: name || email.split('@')[0],
+        email,
+        department: '',
+        position: '',
+        grade: '',
+        userId: user.id,
+      },
+    });
+  }
+
+  return { userId: user.id, role: user.role as UserRole };
 }
 
 export async function deleteSession(): Promise<void> {
