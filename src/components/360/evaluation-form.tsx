@@ -83,7 +83,7 @@ export function EvaluationForm({
           {grouped.map((group, gi) => (
             <div key={group.category ?? `ungrouped-${gi}`} className="space-y-4">
               {group.category && (
-                <h3 className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-1 pt-2">
+                <h3 className="text-base font-bold text-gray-900 bg-gray-50 rounded px-3 py-2 border-l-4 border-blue-500">
                   {group.category}
                 </h3>
               )}
