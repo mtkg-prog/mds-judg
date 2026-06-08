@@ -143,22 +143,33 @@ export async function get360EvalDimensions(): Promise<Eval360Dimension[]> {
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: getSpreadsheetId(),
-    range: '360eval!A2:D',
+    range: '360eval!A2:E',
   });
-  return (res.data.values || [])
-    .filter(row => row[0]?.trim())
-    .map(row => {
-      const groupStr = (row[3] || '').trim();
-      const groups = groupStr
-        ? groupStr.split(',').map((g: string) => g.trim())
-        : ['all'];
-      return {
-        key: row[0].trim(),
-        label: (row[1] || row[0]).trim(),
-        description: (row[2] || '').trim(),
-        groups,
-      };
-    });
+  const rows = (res.data.values || []).filter(row => row[0]?.trim());
+
+  // 重複keyに連番を付与してユニーク化（A列の値はcategoryとして保持）
+  const counters: Record<string, number> = {};
+  return rows.map(row => {
+    const rawKey = row[0].trim();
+    const idx = counters[rawKey] ?? 0;
+    counters[rawKey] = idx + 1;
+
+    const groupStr = (row[3] || '').trim();
+    const groups = groupStr
+      ? groupStr.split(',').map((g: string) => g.trim())
+      : ['all'];
+
+    // E列があればカテゴリ表示名、なければA列の値をそのまま使用
+    const categoryStr = (row[4] || '').trim();
+
+    return {
+      key: `${rawKey}_${idx}`,
+      label: (row[1] || row[0]).trim(),
+      description: (row[2] || '').trim(),
+      groups,
+      category: categoryStr || rawKey,
+    };
+  });
 }
 
 const VALID_RELATIONSHIPS = ['上司', '同僚', '部下', '本人'];

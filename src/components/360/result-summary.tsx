@@ -31,20 +31,41 @@ function OverallScoreBar({ label, description, score }: { label: string; descrip
 }
 
 export function ResultSummary({ result, dimensions }: ResultSummaryProps) {
+  // カテゴリでグループ化（シートの順序を維持）
+  const grouped: { category: string | null; items: typeof dimensions }[] = [];
+  for (const dim of dimensions) {
+    const cat = dim.category || null;
+    const last = grouped[grouped.length - 1];
+    if (last && last.category === cat) {
+      last.items.push(dim);
+    } else {
+      grouped.push({ category: cat, items: [dim] });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ResultRadarChart result={result} dimensions={dimensions} />
 
       <div className="bg-white border rounded-lg p-4">
         <h3 className="text-sm font-semibold mb-3">総合スコア</h3>
-        <div className="space-y-2">
-          {dimensions.map((dim) => (
-            <OverallScoreBar
-              key={dim.key}
-              label={dim.label}
-              description={dim.description}
-              score={result.overallAverages[dim.key] ?? 0}
-            />
+        <div className="space-y-3">
+          {grouped.map((group, gi) => (
+            <div key={group.category ?? `ungrouped-${gi}`} className="space-y-2">
+              {group.category && (
+                <div className="text-xs font-semibold text-gray-700 border-b border-gray-100 pb-1 pt-1">
+                  {group.category}
+                </div>
+              )}
+              {group.items.map((dim) => (
+                <OverallScoreBar
+                  key={dim.key}
+                  label={dim.label}
+                  description={dim.description}
+                  score={result.overallAverages[dim.key] ?? 0}
+                />
+              ))}
+            </div>
           ))}
         </div>
       </div>

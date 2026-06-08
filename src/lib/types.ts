@@ -152,6 +152,7 @@ export interface Eval360Dimension {
   label: string;
   description: string;
   groups: string[]; // ['all'] or ['A','L'] etc.
+  category?: string; // カテゴリ表示名（大項目グループ化用）
 }
 
 export interface Eval360AssignmentRow {
