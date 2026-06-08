@@ -33,6 +33,18 @@ function ScoreBar({ score }: { score: number }) {
 export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardProps) {
   const label = relationshipLabel[category.relationship] || category.relationship;
 
+  // カテゴリでグループ化（シートの順序を維持）
+  const grouped: { category: string | null; items: typeof dimensions }[] = [];
+  for (const dim of dimensions) {
+    const cat = dim.category || null;
+    const last = grouped[grouped.length - 1];
+    if (last && last.category === cat) {
+      last.items.push(dim);
+    } else {
+      grouped.push({ category: cat, items: [dim] });
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -44,13 +56,22 @@ export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardP
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {dimensions.map((dim) => (
-          <div key={dim.key}>
-            <div className="text-sm text-muted-foreground mb-1">{dim.label}</div>
-            {dim.description && (
-              <div className="text-xs text-muted-foreground mb-1">{dim.description}</div>
+        {grouped.map((group, gi) => (
+          <div key={group.category ?? `ungrouped-${gi}`} className="space-y-2">
+            {group.category && (
+              <div className="text-xs font-semibold text-gray-700 border-b border-gray-100 pb-1 pt-1">
+                {group.category}
+              </div>
             )}
-            <ScoreBar score={category.averageScores[dim.key] ?? 0} />
+            {group.items.map((dim) => (
+              <div key={dim.key} className={group.category ? 'pl-2' : ''}>
+                <div className="text-sm text-muted-foreground mb-1">{dim.label}</div>
+                {dim.description && (
+                  <div className="text-xs text-muted-foreground mb-1">{dim.description}</div>
+                )}
+                <ScoreBar score={category.averageScores[dim.key] ?? 0} />
+              </div>
+            ))}
           </div>
         ))}
 

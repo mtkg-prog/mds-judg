@@ -56,6 +56,18 @@ export function EvaluationForm({
     '本人': '自己評価',
   };
 
+  // カテゴリでグループ化（シートの順序を維持）
+  const grouped: { category: string | null; items: typeof dimensions }[] = [];
+  for (const dim of dimensions) {
+    const cat = dim.category || null;
+    const last = grouped[grouped.length - 1];
+    if (last && last.category === cat) {
+      last.items.push(dim);
+    } else {
+      grouped.push({ category: cat, items: [dim] });
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <Card className="mb-6">
@@ -68,29 +80,38 @@ export function EvaluationForm({
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {dimensions.map((dim) => (
-            <div key={dim.key}>
-              <Label className="text-sm font-medium">{dim.label}</Label>
-              <p className="text-xs text-muted-foreground mb-2">{dim.description}</p>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setScores((s) => ({ ...s, [dim.key]: val }))}
-                    className={`w-8 h-8 rounded-full border-2 text-sm font-medium transition-colors ${
-                      scores[dim.key] === val
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
-                    }`}
-                  >
-                    {val}
-                  </button>
-                ))}
-                <span className="text-xs text-muted-foreground ml-2">
-                  1=低い 〜 10=高い
-                </span>
-              </div>
+          {grouped.map((group, gi) => (
+            <div key={group.category ?? `ungrouped-${gi}`} className="space-y-4">
+              {group.category && (
+                <h3 className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-1 pt-2">
+                  {group.category}
+                </h3>
+              )}
+              {group.items.map((dim) => (
+                <div key={dim.key} className={group.category ? 'pl-3' : ''}>
+                  <Label className="text-sm font-medium">{dim.label}</Label>
+                  <p className="text-xs text-muted-foreground mb-2">{dim.description}</p>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setScores((s) => ({ ...s, [dim.key]: val }))}
+                        className={`w-8 h-8 rounded-full border-2 text-sm font-medium transition-colors ${
+                          scores[dim.key] === val
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                        }`}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-2">
+                      1=低い 〜 10=高い
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
 

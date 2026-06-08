@@ -48,6 +48,8 @@ export async function handleCallback(request: NextRequest) {
     });
 
     if (!tokenRes.ok) {
+      const tokenError = await tokenRes.text().catch(() => "");
+      console.error("Google token exchange failed:", tokenRes.status, tokenError);
       throw new Error("Failed to exchange code for token");
     }
 
@@ -102,9 +104,10 @@ export async function handleCallback(request: NextRequest) {
     );
 
     if (!exchangeRes.ok) {
-      const errorData = await exchangeRes.json().catch(() => ({}));
+      const errorText = await exchangeRes.text().catch(() => "");
+      console.error("CarrierAuth exchange failed:", exchangeRes.status, errorText);
       throw new Error(
-        `CarrierAuth exchange failed: ${errorData.error || exchangeRes.status}`
+        `CarrierAuth exchange failed: ${exchangeRes.status} ${errorText}`
       );
     }
 
@@ -130,7 +133,7 @@ export async function handleCallback(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("CarrierAuth callback error:", error);
+    console.error("CarrierAuth callback error:", error instanceof Error ? error.message : error, error instanceof Error ? error.stack : "");
     return NextResponse.redirect(
       `${appUrl}${loginPath}?error=auth_failed`
     );
