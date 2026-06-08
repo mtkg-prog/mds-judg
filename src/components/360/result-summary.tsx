@@ -53,7 +53,7 @@ export function ResultSummary({ result, dimensions }: ResultSummaryProps) {
           {grouped.map((group, gi) => (
             <div key={group.category ?? `ungrouped-${gi}`} className="space-y-2">
               {group.category && (
-                <div className="text-xs font-semibold text-gray-700 border-b border-gray-100 pb-1 pt-1">
+                <div className="text-sm font-bold text-gray-900 bg-gray-50 rounded px-2 py-1.5 border-l-4 border-blue-500">
                   {group.category}
                 </div>
               )}

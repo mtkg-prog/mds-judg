@@ -147,7 +147,17 @@ export async function get360EvalDimensions(): Promise<Eval360Dimension[]> {
   });
   const rows = (res.data.values || []).filter(row => row[0]?.trim());
 
-  // 重複keyに連番を付与してユニーク化（A列の値はcategoryとして保持）
+  // 同一A列keyの最初のE列値をカテゴリ表示名として全行に適用
+  const categoryMap: Record<string, string> = {};
+  for (const row of rows) {
+    const rawKey = row[0].trim();
+    const categoryStr = (row[4] || '').trim();
+    if (categoryStr && !categoryMap[rawKey]) {
+      categoryMap[rawKey] = categoryStr;
+    }
+  }
+
+  // 重複keyに連番を付与してユニーク化
   const counters: Record<string, number> = {};
   return rows.map(row => {
     const rawKey = row[0].trim();
@@ -159,15 +169,12 @@ export async function get360EvalDimensions(): Promise<Eval360Dimension[]> {
       ? groupStr.split(',').map((g: string) => g.trim())
       : ['all'];
 
-    // E列があればカテゴリ表示名、なければA列の値をそのまま使用
-    const categoryStr = (row[4] || '').trim();
-
     return {
       key: `${rawKey}_${idx}`,
       label: (row[1] || row[0]).trim(),
       description: (row[2] || '').trim(),
       groups,
-      category: categoryStr || rawKey,
+      category: categoryMap[rawKey], // E列の表示名（未設定ならundefined）
     };
   });
 }
