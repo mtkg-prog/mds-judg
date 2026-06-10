@@ -12,10 +12,10 @@ interface ResultSummaryProps {
 function OverallScoreBar({ description, score }: { description: string; score: number }) {
   const pct = (score / 10) * 100;
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-28 sm:w-36 shrink-0">
+    <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
+      <div className="w-36 sm:w-48 shrink-0">
         {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-xs text-gray-700">{description}</p>
         )}
       </div>
       <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">

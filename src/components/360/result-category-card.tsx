@@ -67,9 +67,9 @@ export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardP
               </div>
             )}
             {group.items.map((dim) => (
-              <div key={dim.key} className={group.category ? 'pl-2' : ''}>
+              <div key={dim.key} className={`${group.category ? 'pl-2' : ''} border-b border-gray-100 pb-2`}>
                 {dim.description && (
-                  <div className="text-xs text-muted-foreground mb-1">{dim.description}</div>
+                  <div className="text-xs text-gray-700 mb-1">{dim.description}</div>
                 )}
                 <ScoreBar score={category.averageScores[dim.key] ?? 0} />
               </div>
