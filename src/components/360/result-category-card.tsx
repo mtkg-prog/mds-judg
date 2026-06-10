@@ -61,11 +61,13 @@ export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardP
             {group.category && (
               <div className="text-sm font-bold text-gray-900 bg-gray-50 rounded px-2 py-1.5 border-l-4 border-blue-500">
                 {group.category}
+                {group.items[0]?.label && group.items[0].label !== group.category && (
+                  <span className="ml-2 text-xs font-normal text-gray-500">{group.items[0].label}</span>
+                )}
               </div>
             )}
             {group.items.map((dim) => (
               <div key={dim.key} className={group.category ? 'pl-2' : ''}>
-                <div className="text-sm text-muted-foreground mb-1">{dim.label}</div>
                 {dim.description && (
                   <div className="text-xs text-muted-foreground mb-1">{dim.description}</div>
                 )}

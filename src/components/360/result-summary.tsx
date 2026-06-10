@@ -9,12 +9,11 @@ interface ResultSummaryProps {
   dimensions: Eval360Dimension[];
 }
 
-function OverallScoreBar({ label, description, score }: { label: string; description: string; score: number }) {
+function OverallScoreBar({ description, score }: { description: string; score: number }) {
   const pct = (score / 10) * 100;
   return (
     <div className="flex items-center gap-3">
       <div className="w-28 sm:w-36 shrink-0">
-        <span className="text-sm">{label}</span>
         {description && (
           <p className="text-xs text-muted-foreground">{description}</p>
         )}
@@ -55,12 +54,14 @@ export function ResultSummary({ result, dimensions }: ResultSummaryProps) {
               {group.category && (
                 <div className="text-sm font-bold text-gray-900 bg-gray-50 rounded px-2 py-1.5 border-l-4 border-blue-500">
                   {group.category}
+                  {group.items[0]?.label && group.items[0].label !== group.category && (
+                    <span className="ml-2 text-xs font-normal text-gray-500">{group.items[0].label}</span>
+                  )}
                 </div>
               )}
               {group.items.map((dim) => (
                 <OverallScoreBar
                   key={dim.key}
-                  label={dim.label}
                   description={dim.description}
                   score={result.overallAverages[dim.key] ?? 0}
                 />
