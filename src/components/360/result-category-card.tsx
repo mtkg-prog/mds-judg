@@ -15,21 +15,6 @@ const relationshipLabel: Record<string, string> = {
   '本人': '自己評価',
 };
 
-function ScoreBar({ score }: { score: number }) {
-  const pct = (score / 10) * 100;
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-blue-500 rounded-full"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-sm font-medium w-8 text-right">{score.toFixed(1)}</span>
-    </div>
-  );
-}
-
 export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardProps) {
   const label = relationshipLabel[category.relationship] || category.relationship;
 
@@ -67,11 +52,19 @@ export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardP
               </div>
             )}
             {group.items.map((dim) => (
-              <div key={dim.key} className={`${group.category ? 'pl-2' : ''} border-b border-gray-100 pb-2`}>
-                {dim.description && (
-                  <div className="text-xs text-gray-700 mb-1">{dim.description}</div>
-                )}
-                <ScoreBar score={category.averageScores[dim.key] ?? 0} />
+              <div key={dim.key} className={`${group.category ? 'pl-2' : ''} flex items-center gap-3 border-b border-gray-100 pb-2`}>
+                <div className="w-48 sm:w-64 shrink-0">
+                  {dim.description && (
+                    <p className="text-xs text-gray-700">{dim.description}</p>
+                  )}
+                </div>
+                <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full"
+                    style={{ width: `${(category.averageScores[dim.key] ?? 0) / 10 * 100}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold w-8 text-right">{(category.averageScores[dim.key] ?? 0).toFixed(1)}</span>
               </div>
             ))}
           </div>
