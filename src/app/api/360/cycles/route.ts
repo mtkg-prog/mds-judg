@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: '管理者権限が必要です' }, { status: 403 });
     }
 
-    const { name, startDate, endDate } = await request.json();
+    const { name, startDate, endDate, dimensionSheetName } = await request.json();
 
     if (!name || !startDate || !endDate) {
       return NextResponse.json(
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
         name,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
+        ...(dimensionSheetName ? { dimensionSheetName } : {}),
       },
     });
 

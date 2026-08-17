@@ -40,15 +40,16 @@ model Employee {
 }
 
 model EvaluationCycle {
-  id          String   @id @default(cuid())
-  name        String
-  startDate   DateTime
-  endDate     DateTime
-  status      String   @default("draft") // "draft" | "open" | "closed"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  assignments EvaluationAssignment[]
-  responses   EvaluationResponse[]
+  id                 String   @id @default(cuid())
+  name               String
+  startDate          DateTime
+  endDate            DateTime
+  status             String   @default("draft") // "draft" | "open" | "closed"
+  dimensionSheetName String   @default("360eval") // 使用する評価項目シート名
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  assignments        EvaluationAssignment[]
+  responses          EvaluationResponse[]
 }
 
 model EvaluationAssignment {

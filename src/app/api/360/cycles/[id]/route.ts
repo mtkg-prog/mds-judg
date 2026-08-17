@@ -52,13 +52,25 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { status, name, startDate, endDate } = body;
+    const { status, name, startDate, endDate, dimensionSheetName } = body;
+
+    // シート名はdraft状態のみ変更可能
+    if (dimensionSheetName !== undefined) {
+      const current = await prisma.evaluationCycle.findUnique({ where: { id } });
+      if (current && current.status !== 'draft') {
+        return NextResponse.json(
+          { success: false, error: '評価項目シートは下書き状態でのみ変更できます' },
+          { status: 400 }
+        );
+      }
+    }
 
     const data: Record<string, unknown> = {};
     if (status) data.status = status;
     if (name) data.name = name;
     if (startDate) data.startDate = new Date(startDate);
     if (endDate) data.endDate = new Date(endDate);
+    if (dimensionSheetName !== undefined) data.dimensionSheetName = dimensionSheetName;
 
     const cycle = await prisma.evaluationCycle.update({
       where: { id },

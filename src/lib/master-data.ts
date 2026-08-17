@@ -64,25 +64,24 @@ function resolveGradeFromMaster(masterData: MasterData, position: string, totalP
   return { gradeNumber, gradeLabel, gradePay };
 }
 
-// 360 evaluation dimensions cache
-let cached360Dimensions: Eval360Dimension[] | null = null;
-let cache360Timestamp = 0;
+// 360度評価項目のシート名別キャッシュ
+const dimensionCache = new Map<string, { dims: Eval360Dimension[]; timestamp: number }>();
 
-export async function load360Dimensions(): Promise<Eval360Dimension[]> {
+export async function load360Dimensions(sheetName: string = '360eval'): Promise<Eval360Dimension[]> {
   const now = Date.now();
-  if (cached360Dimensions && now - cache360Timestamp < CACHE_TTL_MS) {
-    return cached360Dimensions;
+  const entry = dimensionCache.get(sheetName);
+  if (entry && now - entry.timestamp < CACHE_TTL_MS) {
+    return entry.dims;
   }
 
   try {
-    const dims = await get360EvalDimensions();
+    const dims = await get360EvalDimensions(sheetName);
     if (dims.length > 0) {
-      cached360Dimensions = dims;
-      cache360Timestamp = now;
+      dimensionCache.set(sheetName, { dims, timestamp: now });
     }
     return dims;
   } catch {
-    return cached360Dimensions || [];
+    return entry?.dims || [];
   }
 }
 
@@ -110,8 +109,8 @@ export async function load360Assignments(): Promise<Eval360AssignmentRow[]> {
   }
 }
 
-export async function load360DimensionsForGroup(group: PositionGroup): Promise<Eval360Dimension[]> {
-  const allDims = await load360Dimensions();
+export async function load360DimensionsForGroup(group: PositionGroup, sheetName?: string): Promise<Eval360Dimension[]> {
+  const allDims = await load360Dimensions(sheetName);
   const groupLetter = groupToPrefix(group);
   return allDims.filter(
     (dim) => dim.groups.includes('all') || dim.groups.includes(groupLetter)

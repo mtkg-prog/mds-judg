@@ -16,7 +16,7 @@ export default function EmployeeResultPage() {
     async function fetch_() {
       const [resResult, resDims] = await Promise.all([
         fetch(`/api/360/results/${employeeId}?cycleId=${cycleId}`),
-        fetch(`/api/360/dimensions?evaluateeId=${employeeId}`),
+        fetch(`/api/360/dimensions?evaluateeId=${employeeId}&cycleId=${cycleId}`),
       ]);
       const dataResult = await resResult.json();
       const dataDims = await resDims.json();

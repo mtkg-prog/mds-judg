@@ -22,7 +22,8 @@ export default function Admin360Page() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: '', startDate: '', endDate: '' });
+  const [form, setForm] = useState({ name: '', startDate: '', endDate: '', dimensionSheetName: '360eval' });
+  const [sheetNames, setSheetNames] = useState<string[]>(['360eval']);
 
   async function fetchCycles() {
     const res = await fetch('/api/360/cycles');
@@ -31,7 +32,15 @@ export default function Admin360Page() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchCycles(); }, []);
+  async function fetchSheetNames() {
+    const res = await fetch('/api/360/sheets');
+    const data = await res.json();
+    if (data.success && data.sheetNames.length > 0) {
+      setSheetNames(data.sheetNames);
+    }
+  }
+
+  useEffect(() => { fetchCycles(); fetchSheetNames(); }, []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +52,7 @@ export default function Admin360Page() {
     });
     const data = await res.json();
     if (data.success) {
-      setForm({ name: '', startDate: '', endDate: '' });
+      setForm({ name: '', startDate: '', endDate: '', dimensionSheetName: '360eval' });
       router.push(`/admin/360/${data.cycle.id}`);
     } else {
       alert(data.error);
@@ -101,6 +110,19 @@ export default function Admin360Page() {
                 onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
                 required
               />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="dimensionSheetName">評価項目シート</Label>
+              <select
+                id="dimensionSheetName"
+                value={form.dimensionSheetName}
+                onChange={(e) => setForm((f) => ({ ...f, dimensionSheetName: e.target.value }))}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-56"
+              >
+                {sheetNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
             </div>
             <Button type="submit" disabled={creating}>
               {creating ? '作成中...' : '作成'}
