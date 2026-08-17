@@ -138,12 +138,13 @@ export async function getMasterData(): Promise<MasterData | null> {
   }
 }
 
-export async function get360EvalDimensions(): Promise<Eval360Dimension[]> {
+/** 指定シートから360度評価項目を取得する */
+export async function get360EvalDimensions(sheetName: string = '360eval'): Promise<Eval360Dimension[]> {
   const auth = getAuth();
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: getSpreadsheetId(),
-    range: '360eval!A2:E',
+    range: `${sheetName}!A2:E`,
   });
   const rows = (res.data.values || []).filter(row => row[0]?.trim());
 
@@ -198,6 +199,20 @@ export async function get360Assignments(): Promise<Eval360AssignmentRow[]> {
         relationship: (VALID_RELATIONSHIPS.includes(rel) ? rel : '同僚') as EvaluationRelationship,
       };
     });
+}
+
+/** 360eval で始まるシートタブ名の一覧を取得する */
+export async function get360EvalSheetNames(): Promise<string[]> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.get({
+    spreadsheetId: getSpreadsheetId(),
+    fields: 'sheets.properties.title',
+  });
+  const allTitles = (res.data.sheets || [])
+    .map((s) => s.properties?.title || '')
+    .filter((title) => title.startsWith('360eval'));
+  return allTitles;
 }
 
 export async function getAllMissions(): Promise<MissionRow[]> {

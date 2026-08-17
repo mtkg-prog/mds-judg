@@ -30,11 +30,13 @@ export default function EvaluatePage() {
 
       if (dataAssignments.success) {
         const found = dataAssignments.assignments.find(
-          (a: AssignmentDetail) => a.id === assignmentId
+          (a: AssignmentDetail & { cycleId: string }) => a.id === assignmentId
         );
         if (found) {
-          // Fetch dimensions for the evaluatee's position group
-          const resDims = await fetch(`/api/360/dimensions?evaluateeId=${found.evaluateeId}`);
+          // サイクルに紐づくシートから評価項目を取得
+          const dimParams = new URLSearchParams({ evaluateeId: found.evaluateeId });
+          if (found.cycleId) dimParams.set('cycleId', found.cycleId);
+          const resDims = await fetch(`/api/360/dimensions?${dimParams.toString()}`);
           const dataDims = await resDims.json();
           if (dataDims.success) setDimensions(dataDims.dimensions);
 

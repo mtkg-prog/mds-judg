@@ -11,6 +11,19 @@ export async function GET(request: NextRequest) {
     }
 
     const evaluateeId = request.nextUrl.searchParams.get('evaluateeId');
+    const cycleId = request.nextUrl.searchParams.get('cycleId');
+
+    // サイクルに紐づくシート名を取得
+    let sheetName: string | undefined;
+    if (cycleId) {
+      const cycle = await prisma.evaluationCycle.findUnique({
+        where: { id: cycleId },
+        select: { dimensionSheetName: true },
+      });
+      if (cycle) {
+        sheetName = cycle.dimensionSheetName;
+      }
+    }
 
     if (evaluateeId) {
       const employee = await prisma.employee.findUnique({
@@ -20,12 +33,12 @@ export async function GET(request: NextRequest) {
 
       if (employee) {
         const group = await resolvePositionGroupByPosition(employee.position);
-        const dimensions = await load360DimensionsForGroup(group);
+        const dimensions = await load360DimensionsForGroup(group, sheetName);
         return NextResponse.json({ success: true, dimensions });
       }
     }
 
-    const dimensions = await load360Dimensions();
+    const dimensions = await load360Dimensions(sheetName);
     return NextResponse.json({ success: true, dimensions });
   } catch (e) {
     return NextResponse.json(

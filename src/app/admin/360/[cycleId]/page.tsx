@@ -13,6 +13,7 @@ interface CycleDetail {
   startDate: string;
   endDate: string;
   status: string;
+  dimensionSheetName: string;
   _count: { assignments: number; responses: number };
 }
 
@@ -98,6 +99,9 @@ export default function CycleDetailPage() {
           <p className="text-sm text-muted-foreground mt-1">
             {new Date(cycle.startDate).toLocaleDateString()} 〜{' '}
             {new Date(cycle.endDate).toLocaleDateString()}
+          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            評価項目シート: <span className="font-medium text-foreground">{cycle.dimensionSheetName}</span>
           </p>
         </div>
         <Badge variant={cycle.status === 'open' ? 'default' : 'secondary'}>

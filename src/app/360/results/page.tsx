@@ -12,26 +12,17 @@ export default function MyResultsPage() {
 
   useEffect(() => {
     async function fetch_() {
-      // Get my assignments to discover my employeeId and available cycles
-      const [resAssignments, resDims] = await Promise.all([
-        fetch('/api/360/assignments'),
-        fetch('/api/360/dimensions'),
-      ]);
+      // 割当一覧を取得してサイクル情報を収集
+      const resAssignments = await fetch('/api/360/assignments');
       const dataAssignments = await resAssignments.json();
-      const dataDims = await resDims.json();
-
-      if (dataDims.success) setDimensions(dataDims.dimensions);
 
       if (!dataAssignments.success) {
         setLoading(false);
         return;
       }
 
-      // Find cycles where evaluations have been submitted (self-evaluations reveal my ID)
-      // We need to get results for each closed cycle
-      // Use the cycles API to find closed ones, then fetch results
+      // 完了済みサイクルのIDを収集
       const res = await fetch('/api/360/cycles');
-      // If not admin, this may fail - fall back to assignment-based cycle discovery
       let cycleIds: string[] = [];
 
       if (res.ok) {
@@ -44,7 +35,6 @@ export default function MyResultsPage() {
       }
 
       if (cycleIds.length === 0) {
-        // Discover from assignments
         const closedCycles = new Set(
           dataAssignments.assignments
             .filter((a: { cycleStatus: string }) => a.cycleStatus === 'closed')
@@ -53,8 +43,6 @@ export default function MyResultsPage() {
         cycleIds = Array.from(closedCycles) as string[];
       }
 
-      // Fetch results for each cycle - we use a self endpoint
-      // We need to find my employeeId - look for a self-evaluation assignment
       const selfAssignment = dataAssignments.assignments.find(
         (a: { relationship: string }) => a.relationship === '本人'
       );
@@ -64,21 +52,26 @@ export default function MyResultsPage() {
         return;
       }
 
-      // Infer employeeId: In a self-evaluation, evaluateeName is my name
-      // But we need the actual ID. Let's fetch results using a special path.
-      // The API at /api/360/results/[employeeId] checks session, so we need to know our ID.
-      // Let's try fetching our own session info
-      const sessionRes = await fetch('/api/health');
-      // Actually we can use the assignments to find cycles, then try each cycle
       const allResults: Eval360ResultView[] = [];
 
       for (const cycleId of cycleIds) {
-        // Try fetching with "me" - we'll adjust the API to support this
-        const resultRes = await fetch(`/api/360/results/me?cycleId=${cycleId}`);
+        const [resultRes, dimsRes] = await Promise.all([
+          fetch(`/api/360/results/me?cycleId=${cycleId}`),
+          fetch(`/api/360/dimensions?cycleId=${cycleId}`),
+        ]);
+
         if (resultRes.ok) {
           const resultData = await resultRes.json();
           if (resultData.success) {
             allResults.push(resultData.result);
+          }
+        }
+
+        // 最後のサイクルのディメンションを使用（複数サイクルの場合はサイクルごとに異なる可能性あり）
+        if (dimsRes.ok) {
+          const dimsData = await dimsRes.json();
+          if (dimsData.success) {
+            setDimensions(dimsData.dimensions);
           }
         }
       }
