@@ -26,6 +26,31 @@ export interface MissionInput {
   m5_feasibilityEvidence: string;
 }
 
+/** 事業部門の定量データ */
+export interface BusinessQuantitativeInput {
+  budgetAmount?: number;        // 予算額 (万円)
+  salesTarget?: number;         // 売上目標 (万円)
+  profitTarget?: number;        // 利益目標 (万円)
+  prevYearSales?: number;       // 前年売上実績 (万円)
+  prevYearProfit?: number;      // 前年利益実績 (万円)
+}
+
+/** 間接部門の定量データ */
+export interface IndirectQuantitativeInput {
+  costReductionTarget?: number;     // コスト削減目標 (万円)
+  efficiencyTarget?: string;        // 業務効率化目標
+  prevYearCost?: number;            // 前年コスト実績 (万円)
+}
+
+export type QuantitativeInput = BusinessQuantitativeInput | IndirectQuantitativeInput;
+
+/** 自動算出される前年比 */
+export interface ComputedRatios {
+  salesYoyRatio?: number;       // 売上前年比 (%)
+  profitYoyRatio?: number;      // 利益前年比 (%)
+  costReductionRatio?: number;  // コスト削減率 (%)
+}
+
 export interface AIScoreResult {
   difficulty: number;
   scope: number;
@@ -33,6 +58,8 @@ export interface AIScoreResult {
   contribution: number;
   roleLevel: number;
   feasibility: number;
+  budgetScale?: number;       // 予算規模（定量データ入力時のみ）
+  growthChallenge?: number;   // 成長性（定量データ入力時のみ）
   comment: string;
   advice?: string;
 }
@@ -41,6 +68,7 @@ export interface ScoringRequest {
   position: string;
   departmentType?: DepartmentType;
   mission: MissionInput;
+  quantitative?: QuantitativeInput;  // 定量データ（任意）
 }
 
 export interface ScoringResponse {
@@ -127,6 +155,15 @@ export interface MissionRow {
   totalPoint?: number;
   finalGradeLabel?: string;
   finalGradePay?: number;
+  // 定量データ入力列（AC-AG）
+  budgetAmount?: number;        // 予算額 (万円)
+  salesTarget?: number;         // 売上目標 (万円)
+  profitTarget?: number;        // 利益目標 (万円)
+  prevYearSales?: number;       // 前年売上実績 (万円)
+  prevYearProfit?: number;      // 前年利益実績 (万円)
+  // 定量スコア出力列（AH-AI）
+  budgetScaleScore?: number;    // 予算規模スコア (1-10)
+  growthChallengeScore?: number; // 成長性スコア (1-10)
 }
 
 export interface PersonSummary {

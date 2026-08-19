@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DEPARTMENT_TYPES, POSITIONS, type DepartmentType, type MissionInput, type Position } from '@/lib/types';
+import { DEPARTMENT_TYPES, POSITIONS, type BusinessQuantitativeInput, type DepartmentType, type IndirectQuantitativeInput, type MissionInput, type Position, type QuantitativeInput } from '@/lib/types';
 
 const MIN_CHAR_M1 = 10;
 const MIN_CHAR_DETAIL = 30;
@@ -30,7 +30,7 @@ function createEmptyMission(): MissionFormData {
 }
 
 interface CheckFormProps {
-  onSubmit: (position: Position, departmentType: DepartmentType, missions: MissionInput[]) => void;
+  onSubmit: (position: Position, departmentType: DepartmentType, missions: MissionInput[], quantitative?: QuantitativeInput) => void;
   isLoading: boolean;
 }
 
@@ -48,6 +48,11 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
   const [position, setPosition] = useState<Position | ''>('');
   const [departmentType, setDepartmentType] = useState<DepartmentType | ''>('');
   const [missions, setMissions] = useState<MissionFormData[]>([createEmptyMission()]);
+
+  // 定量データ（事業部門用）
+  const [businessQuant, setBusinessQuant] = useState<BusinessQuantitativeInput>({});
+  // 定量データ（間接部門用）
+  const [indirectQuant, setIndirectQuant] = useState<IndirectQuantitativeInput>({});
 
   const totalWeight = missions.reduce((sum, m) => sum + (m.weight || 0), 0);
 
@@ -75,11 +80,31 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
     setMissions(prev => prev.filter(m => m.id !== id));
   }
 
+  /** 部門種別変更時に定量データをリセット */
+  function handleDepartmentTypeChange(value: DepartmentType) {
+    setDepartmentType(value);
+    setBusinessQuant({});
+    setIndirectQuant({});
+  }
+
+  /** 定量データを構築（値が入力されている場合のみ返す） */
+  function buildQuantitative(): QuantitativeInput | undefined {
+    if (!departmentType) return undefined;
+
+    if (departmentType === 'business') {
+      const hasData = businessQuant.budgetAmount || businessQuant.salesTarget || businessQuant.profitTarget || businessQuant.prevYearSales || businessQuant.prevYearProfit;
+      return hasData ? businessQuant : undefined;
+    }
+
+    const hasData = indirectQuant.costReductionTarget || indirectQuant.efficiencyTarget || indirectQuant.prevYearCost;
+    return hasData ? indirectQuant : undefined;
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!position || !departmentType) return;
     const missionInputs: MissionInput[] = missions.map(({ id: _id, ...rest }) => rest);
-    onSubmit(position as Position, departmentType as DepartmentType, missionInputs);
+    onSubmit(position as Position, departmentType as DepartmentType, missionInputs, buildQuantitative());
   }
 
   return (
@@ -104,7 +129,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="departmentType">部門種別</Label>
-            <Select value={departmentType} onValueChange={(v) => setDepartmentType(v as DepartmentType)}>
+            <Select value={departmentType} onValueChange={(v) => handleDepartmentTypeChange(v as DepartmentType)}>
               <SelectTrigger id="departmentType">
                 <SelectValue placeholder="部門種別を選択" />
               </SelectTrigger>
@@ -117,6 +142,105 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* 定量データ（任意）セクション */}
+      {departmentType && (
+        <Card>
+          <CardHeader>
+            <CardTitle>定量データ（任意）</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              定量データを入力すると、予算規模・成長性の2項目が追加で採点されます（未入力の場合は従来の6項目で採点）
+            </p>
+
+            {departmentType === 'business' ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>予算額（万円）</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={businessQuant.budgetAmount ?? ''}
+                    onChange={e => setBusinessQuant(prev => ({ ...prev, budgetAmount: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 20000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>売上目標（万円）</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={businessQuant.salesTarget ?? ''}
+                    onChange={e => setBusinessQuant(prev => ({ ...prev, salesTarget: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 30000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>利益目標（万円）</Label>
+                  <Input
+                    type="number"
+                    value={businessQuant.profitTarget ?? ''}
+                    onChange={e => setBusinessQuant(prev => ({ ...prev, profitTarget: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 5000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>前年売上実績（万円）</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={businessQuant.prevYearSales ?? ''}
+                    onChange={e => setBusinessQuant(prev => ({ ...prev, prevYearSales: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 25000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>前年利益実績（万円）</Label>
+                  <Input
+                    type="number"
+                    value={businessQuant.prevYearProfit ?? ''}
+                    onChange={e => setBusinessQuant(prev => ({ ...prev, prevYearProfit: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 4000"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>コスト削減目標（万円）</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={indirectQuant.costReductionTarget ?? ''}
+                    onChange={e => setIndirectQuant(prev => ({ ...prev, costReductionTarget: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>前年コスト実績（万円）</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={indirectQuant.prevYearCost ?? ''}
+                    onChange={e => setIndirectQuant(prev => ({ ...prev, prevYearCost: e.target.value ? Number(e.target.value) : undefined }))}
+                    placeholder="例: 10000"
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-2">
+                  <Label>業務効率化目標</Label>
+                  <Input
+                    type="text"
+                    value={indirectQuant.efficiencyTarget ?? ''}
+                    onChange={e => setIndirectQuant(prev => ({ ...prev, efficiencyTarget: e.target.value || undefined }))}
+                    placeholder="例: 月次決算を3営業日短縮、申請処理の自動化率50%達成"
+                  />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
         <p className="font-medium">ミッションウェイト（重要度の配分）について</p>

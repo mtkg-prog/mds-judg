@@ -53,6 +53,16 @@ export async function callGeminiForScoring(prompt: string): Promise<{
       parsed.advice = '';
     }
 
+    // 定量次元のバリデーション（存在する場合は1-10の整数か確認）
+    const validateOptionalScore = (value: number | undefined): number | undefined => {
+      if (value === undefined) return undefined;
+      const n = Math.round(Number(value));
+      if (isNaN(n) || n < 1 || n > 10) return undefined;
+      return n;
+    };
+    parsed.budgetScale = validateOptionalScore(parsed.budgetScale);
+    parsed.growthChallenge = validateOptionalScore(parsed.growthChallenge);
+
     return { success: true, data: parsed };
   } catch (e) {
     return { success: false, error: `レスポンス解析失敗: ${e}` };

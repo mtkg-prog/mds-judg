@@ -122,6 +122,8 @@ export function PersonTable({ missions }: PersonTableProps) {
                             <TableHead className="text-center">課題寄与</TableHead>
                             <TableHead className="text-center">立ち位置</TableHead>
                             <TableHead className="text-center">実現可能性</TableHead>
+                            <TableHead className="text-center">予算規模</TableHead>
+                            <TableHead className="text-center">成長性</TableHead>
                             <TableHead className="text-right">加重ポイント</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -137,6 +139,8 @@ export function PersonTable({ missions }: PersonTableProps) {
                               <TableCell className="text-center">{m.contribution ?? '-'}</TableCell>
                               <TableCell className="text-center">{m.roleLevel ?? '-'}</TableCell>
                               <TableCell className="text-center">{m.feasibility ?? '-'}</TableCell>
+                              <TableCell className="text-center">{m.budgetScaleScore ?? '-'}</TableCell>
+                              <TableCell className="text-center">{m.growthChallengeScore ?? '-'}</TableCell>
                               <TableCell className="text-right">{m.missionWeightedPoint ?? '-'}</TableCell>
                             </TableRow>
                           ))}
