@@ -53,6 +53,15 @@ function parseRow(row: string[], rowNumber: number): MissionRow {
     totalPoint: row[25] ? Number(row[25]) : undefined,
     finalGradeLabel: row[26] || undefined,
     finalGradePay: row[27] ? Number(row[27]) : undefined,
+    // 定量データ入力列（AC-AG = index 28-32）
+    budgetAmount: row[28] ? Number(row[28]) : undefined,
+    salesTarget: row[29] ? Number(row[29]) : undefined,
+    profitTarget: row[30] ? Number(row[30]) : undefined,
+    prevYearSales: row[31] ? Number(row[31]) : undefined,
+    prevYearProfit: row[32] ? Number(row[32]) : undefined,
+    // 定量スコア出力列（AH-AI = index 33-34）
+    budgetScaleScore: row[33] ? Number(row[33]) : undefined,
+    growthChallengeScore: row[34] ? Number(row[34]) : undefined,
   };
 }
 
@@ -222,7 +231,7 @@ export async function getAllMissions(): Promise<MissionRow[]> {
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'missions!A2:AB',
+    range: 'missions!A2:AI',
   });
 
   const rows = response.data.values || [];

@@ -1,7 +1,7 @@
-import type { AIScoreResult, DepartmentType, MissionInput, PositionGroup } from './types';
+import type { AIScoreResult, BusinessQuantitativeInput, ComputedRatios, DepartmentType, IndirectQuantitativeInput, MissionInput, PositionGroup, QuantitativeInput } from './types';
 import { roundToTwo } from './utils';
 import { normalizePositionGroup } from './aggregation';
-import { getGroupRubric } from './scoring-rubrics';
+import { getGroupRubric, getQuantitativeRubric } from './scoring-rubrics';
 
 const COMPANY_MVV = {
   vision: '高齢社会をアップデートする',
@@ -100,10 +100,11 @@ ${instruction}
 `;
 }
 
-export function buildScoringPrompt(inputData: MissionInput, position?: string, departmentType?: DepartmentType): string {
+export function buildScoringPrompt(inputData: MissionInput, position?: string, departmentType?: DepartmentType, quantitative?: QuantitativeInput): string {
   const { groupLabel, groupDescription } = getPositionGroupContext(position);
   const group = position ? normalizePositionGroup(position) : 'groupA';
   const rubricSection = getGroupRubric(group);
+  const hasQuant = hasQuantitativeData(quantitative);
 
   const positionSection = position ? `
 【提出者情報】
@@ -114,6 +115,40 @@ ${groupDescription}
 
   const departmentSection = getDepartmentTypeContext(departmentType);
   const mvvSection = getMvvWeightingContext(position);
+
+  // 定量データセクション（入力がある場合のみ）
+  const quantitativeSection = hasQuant
+    ? buildQuantitativeSection(quantitative!, departmentType || 'business')
+    : '';
+
+  // 採点次元数に応じた出力ルール
+  const totalDimensions = hasQuant ? 8 : 6;
+  const jsonKeys = hasQuant
+    ? 'difficulty, scope, innovation, contribution, roleLevel, feasibility, budgetScale, growthChallenge, comment, advice'
+    : 'difficulty, scope, innovation, contribution, roleLevel, feasibility, comment, advice';
+  const outputFormat = hasQuant
+    ? `{
+  "difficulty": 1,
+  "scope": 1,
+  "innovation": 1,
+  "contribution": 1,
+  "roleLevel": 1,
+  "feasibility": 1,
+  "budgetScale": 1,
+  "growthChallenge": 1,
+  "comment": "...",
+  "advice": "..."
+}`
+    : `{
+  "difficulty": 1,
+  "scope": 1,
+  "innovation": 1,
+  "contribution": 1,
+  "roleLevel": 1,
+  "feasibility": 1,
+  "comment": "...",
+  "advice": "..."
+}`;
 
   return `
 あなたは人事評価制度の厳格な採点官です。
@@ -164,15 +199,15 @@ ${positionSection}${departmentSection}${mvvSection}
 - M3: ミッションの内容や難易度
 - M4: 関係先、巻き込む相手、自分の役割や立ち位置
 - M5: ミッション完遂の根拠
-${rubricSection}
+${rubricSection}${quantitativeSection}
 【出力ルール】
 - 必ずJSONのみを返してください
 - Markdownのコードブロックは使わないでください
 - commentは100文字以内の日本語で、減点理由を中心に書いてください
 - 点数は必ず1〜10の整数
-- 6項目の平均が6.0を大きく超える場合は、採点が甘すぎないか再確認してください
+- ${totalDimensions}項目の平均が6.0を大きく超える場合は、採点が甘すぎないか再確認してください
 - JSONキーは必ず次の通り:
-difficulty, scope, innovation, contribution, roleLevel, feasibility, comment, advice
+${jsonKeys}
 
 【アドバイス出力ルール】
 - adviceは300文字以内の日本語で書いてください
@@ -184,16 +219,7 @@ difficulty, scope, innovation, contribution, roleLevel, feasibility, comment, ad
 - 答えそのものを教えるのではなく、考える方向性を示してください
 
 【出力形式】
-{
-  "difficulty": 1,
-  "scope": 1,
-  "innovation": 1,
-  "contribution": 1,
-  "roleLevel": 1,
-  "feasibility": 1,
-  "comment": "...",
-  "advice": "..."
-}
+${outputFormat}
 
 【提出内容】
 ${JSON.stringify(inputData, null, 2)}
@@ -209,7 +235,13 @@ interface ScoreWeights {
   feasibility: number;
 }
 
-/** 役職グループ別の加重配分 */
+/** 8次元用の加重配分（budgetScale + growthChallenge を含む） */
+interface ExtendedScoreWeights extends ScoreWeights {
+  budgetScale: number;
+  growthChallenge: number;
+}
+
+/** 役職グループ別の加重配分（6次元） */
 const SCORE_WEIGHTS_BY_GROUP: Record<PositionGroup, ScoreWeights> = {
   groupA: { difficulty: 0.15, scope: 0.10, innovation: 0.15, contribution: 0.15, roleLevel: 0.30, feasibility: 0.15 },
   groupL: { difficulty: 0.15, scope: 0.15, innovation: 0.15, contribution: 0.20, roleLevel: 0.20, feasibility: 0.15 },
@@ -218,18 +250,143 @@ const SCORE_WEIGHTS_BY_GROUP: Record<PositionGroup, ScoreWeights> = {
   groupD: { difficulty: 0.10, scope: 0.25, innovation: 0.20, contribution: 0.30, roleLevel: 0.05, feasibility: 0.10 },
 };
 
+/** 役職グループ別の加重配分（8次元：定量データ入力時） */
+const SCORE_WEIGHTS_8DIM_BY_GROUP: Record<PositionGroup, ExtendedScoreWeights> = {
+  groupA: { difficulty: 0.13, scope: 0.08, innovation: 0.13, contribution: 0.13, roleLevel: 0.28, feasibility: 0.13, budgetScale: 0.05, growthChallenge: 0.07 },
+  groupL: { difficulty: 0.13, scope: 0.12, innovation: 0.13, contribution: 0.17, roleLevel: 0.18, feasibility: 0.13, budgetScale: 0.07, growthChallenge: 0.07 },
+  groupU: { difficulty: 0.12, scope: 0.12, innovation: 0.22, contribution: 0.12, roleLevel: 0.13, feasibility: 0.13, budgetScale: 0.08, growthChallenge: 0.08 },
+  groupG: { difficulty: 0.12, scope: 0.20, innovation: 0.16, contribution: 0.20, roleLevel: 0.04, feasibility: 0.08, budgetScale: 0.10, growthChallenge: 0.10 },
+  groupD: { difficulty: 0.08, scope: 0.20, innovation: 0.16, contribution: 0.24, roleLevel: 0.04, feasibility: 0.08, budgetScale: 0.10, growthChallenge: 0.10 },
+};
+
+/** 定量データが十分に入力されているか判定 */
+export function hasQuantitativeData(quantitative?: QuantitativeInput): boolean {
+  if (!quantitative) return false;
+
+  // 事業部門: 予算額・売上目標・利益目標のいずれかがあればbudgetScale採点可能
+  if ('salesTarget' in quantitative || 'budgetAmount' in quantitative || 'profitTarget' in quantitative) {
+    const bq = quantitative as BusinessQuantitativeInput;
+    return !!(bq.budgetAmount || bq.salesTarget || bq.profitTarget);
+  }
+
+  // 間接部門: コスト削減目標または前年コスト実績があれば採点可能
+  if ('costReductionTarget' in quantitative || 'prevYearCost' in quantitative) {
+    const iq = quantitative as IndirectQuantitativeInput;
+    return !!(iq.costReductionTarget || iq.prevYearCost);
+  }
+
+  return false;
+}
+
+/** 前年比を自動計算 */
+export function computeYoyRatios(quantitative: QuantitativeInput, departmentType: DepartmentType): ComputedRatios {
+  const ratios: ComputedRatios = {};
+
+  if (departmentType === 'business') {
+    const bq = quantitative as BusinessQuantitativeInput;
+    // 売上前年比（ゼロ除算防止）
+    if (bq.salesTarget && bq.prevYearSales && bq.prevYearSales > 0) {
+      ratios.salesYoyRatio = roundToTwo((bq.salesTarget / bq.prevYearSales) * 100);
+    }
+    // 利益前年比（前年がマイナスの場合は特殊扱い）
+    if (bq.profitTarget !== undefined && bq.prevYearProfit !== undefined && bq.prevYearProfit !== 0) {
+      ratios.profitYoyRatio = roundToTwo((bq.profitTarget / bq.prevYearProfit) * 100);
+    }
+  } else {
+    const iq = quantitative as IndirectQuantitativeInput;
+    // コスト削減率
+    if (iq.costReductionTarget && iq.prevYearCost && iq.prevYearCost > 0) {
+      ratios.costReductionRatio = roundToTwo((iq.costReductionTarget / iq.prevYearCost) * 100);
+    }
+  }
+
+  return ratios;
+}
+
+/** 定量データのプロンプトセクションを構築 */
+function buildQuantitativeSection(quantitative: QuantitativeInput, departmentType: DepartmentType): string {
+  const ratios = computeYoyRatios(quantitative, departmentType);
+  const rubric = getQuantitativeRubric(departmentType);
+
+  let dataLines = '';
+
+  if (departmentType === 'business') {
+    const bq = quantitative as BusinessQuantitativeInput;
+    const lines: string[] = [];
+    if (bq.budgetAmount) lines.push(`予算額: ${bq.budgetAmount.toLocaleString()}万円`);
+    if (bq.salesTarget) lines.push(`売上目標: ${bq.salesTarget.toLocaleString()}万円`);
+    if (bq.profitTarget) lines.push(`利益目標: ${bq.profitTarget.toLocaleString()}万円`);
+    if (bq.prevYearSales) lines.push(`前年売上実績: ${bq.prevYearSales.toLocaleString()}万円`);
+    if (bq.prevYearProfit !== undefined) lines.push(`前年利益実績: ${bq.prevYearProfit.toLocaleString()}万円`);
+    dataLines = lines.join('\n');
+
+    // 自動計算値
+    const calcLines: string[] = [];
+    if (ratios.salesYoyRatio) calcLines.push(`売上前年比: ${ratios.salesYoyRatio}%`);
+    if (ratios.profitYoyRatio) calcLines.push(`利益前年比: ${ratios.profitYoyRatio}%`);
+    // 前年赤字→今期黒字のケース検出
+    if (bq.prevYearProfit !== undefined && bq.prevYearProfit < 0 && bq.profitTarget !== undefined && bq.profitTarget > 0) {
+      calcLines.push(`※ 赤字→黒字転換を目指すミッション（growthChallengeで8点以上を検討）`);
+    }
+    if (calcLines.length > 0) {
+      dataLines += `\n\n【自動計算値】\n${calcLines.join('\n')}`;
+    }
+  } else {
+    const iq = quantitative as IndirectQuantitativeInput;
+    const lines: string[] = [];
+    if (iq.costReductionTarget) lines.push(`コスト削減目標: ${iq.costReductionTarget.toLocaleString()}万円`);
+    if (iq.efficiencyTarget) lines.push(`業務効率化目標: ${iq.efficiencyTarget}`);
+    if (iq.prevYearCost) lines.push(`前年コスト実績: ${iq.prevYearCost.toLocaleString()}万円`);
+    dataLines = lines.join('\n');
+
+    if (ratios.costReductionRatio) {
+      dataLines += `\n\n【自動計算値】\nコスト削減率: ${ratios.costReductionRatio}%`;
+    }
+  }
+
+  return `
+【定量データ】
+この提出者は以下の定量データを申告しています。budgetScaleとgrowthChallengeの採点に使用してください。
+これらの2項目はミッション記述文の質ではなく、定量データに基づいて採点してください。
+
+${dataLines}
+
+【追加採点基準】
+${rubric}
+`;
+}
+
 export function calculateMissionWeightedPoint(scores: AIScoreResult, weight: number, position?: string): number {
   const group = position ? normalizePositionGroup(position) : 'groupA';
-  const w = SCORE_WEIGHTS_BY_GROUP[group];
+  const has8Dim = scores.budgetScale !== undefined && scores.growthChallenge !== undefined;
 
-  const basePoint = roundToTwo(
-    scores.difficulty * w.difficulty +
-    scores.scope * w.scope +
-    scores.innovation * w.innovation +
-    scores.contribution * w.contribution +
-    scores.roleLevel * w.roleLevel +
-    scores.feasibility * w.feasibility
-  );
+  let basePoint: number;
+
+  if (has8Dim) {
+    // 8次元重み
+    const w = SCORE_WEIGHTS_8DIM_BY_GROUP[group];
+    basePoint = roundToTwo(
+      scores.difficulty * w.difficulty +
+      scores.scope * w.scope +
+      scores.innovation * w.innovation +
+      scores.contribution * w.contribution +
+      scores.roleLevel * w.roleLevel +
+      scores.feasibility * w.feasibility +
+      scores.budgetScale! * w.budgetScale +
+      scores.growthChallenge! * w.growthChallenge
+    );
+  } else {
+    // 従来の6次元重み
+    const w = SCORE_WEIGHTS_BY_GROUP[group];
+    basePoint = roundToTwo(
+      scores.difficulty * w.difficulty +
+      scores.scope * w.scope +
+      scores.innovation * w.innovation +
+      scores.contribution * w.contribution +
+      scores.roleLevel * w.roleLevel +
+      scores.feasibility * w.feasibility
+    );
+  }
 
   return roundToTwo(basePoint * (weight / 100));
 }

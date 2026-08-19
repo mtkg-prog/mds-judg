@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import type { CheckResult } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 
+/** 全採点次元のラベル定義（6次元 + 2次元） */
 const SCORE_LABELS: Record<string, string> = {
   difficulty: '難易度',
   scope: '影響範囲',
@@ -13,6 +14,8 @@ const SCORE_LABELS: Record<string, string> = {
   contribution: '課題寄与',
   roleLevel: '立ち位置',
   feasibility: '実現可能性',
+  budgetScale: '予算規模',
+  growthChallenge: '成長性',
 };
 
 function getScoreColor(score: number): string {
@@ -89,13 +92,18 @@ export function ScoreResult({ result }: ScoreResultProps) {
           <CardContent className="space-y-4">
             {mission.scores && (
               <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {(Object.keys(SCORE_LABELS) as Array<keyof typeof SCORE_LABELS>).map(key => (
-                    <div key={key} className="flex items-center justify-between rounded-lg border p-3">
-                      <span className="text-sm">{SCORE_LABELS[key]}</span>
-                      <ScoreBadge score={mission.scores![key as keyof typeof mission.scores] as number} />
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {Object.keys(SCORE_LABELS).map(key => {
+                    const score = mission.scores![key as keyof typeof mission.scores];
+                    // undefinedの次元（定量データ未入力時のbudgetScale等）はスキップ
+                    if (score === undefined || typeof score !== 'number') return null;
+                    return (
+                      <div key={key} className="flex items-center justify-between rounded-lg border p-3">
+                        <span className="text-sm">{SCORE_LABELS[key]}</span>
+                        <ScoreBadge score={score} />
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <Separator />
