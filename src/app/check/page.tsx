@@ -81,6 +81,22 @@ export default function CheckPage() {
         </p>
       </div>
 
+      <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+        <p className="text-sm font-bold">この結果はAIによる参考値です</p>
+        <p className="mt-2 text-xs">
+          ここで表示されるスコア・グレードはAIがミッション内容を分析した参考値であり、確定的な評価ではありません。
+          実際のグレードは、ミッションの難易度や予算の規模感などを含むさまざまな要素によって総合的に判断されます。
+        </p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <li>ミッションの難易度・挑戦度合い</li>
+          <li>売り上げや利益の規模・前年比</li>
+          <li>マネジメントの規模</li>
+          <li>苦戦しているエリアの立て直し等の状況</li>
+          <li>360度評価</li>
+          <li>その他、会社が定める評価基準</li>
+        </ul>
+      </div>
+
       <CheckForm onSubmit={handleSubmit} isLoading={isLoading} />
 
       {error && (
