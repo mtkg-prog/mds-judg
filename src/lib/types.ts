@@ -199,7 +199,7 @@ export interface Eval360AssignmentRow {
 }
 
 export interface Eval360Scores {
-  [dimensionKey: string]: number; // 1-10
+  [dimensionKey: string]: number; // 0-5（0=判断できない、1-5=評価値）
 }
 
 export interface Eval360AssignmentView {

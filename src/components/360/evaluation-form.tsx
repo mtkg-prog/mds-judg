@@ -23,7 +23,7 @@ export function EvaluationForm({
   const router = useRouter();
   const [scores, setScores] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
-    for (const dim of dimensions) init[dim.key] = 5;
+    for (const dim of dimensions) init[dim.key] = 0;
     return init;
   });
   const [comment, setComment] = useState('');
@@ -91,15 +91,17 @@ export function EvaluationForm({
                 <div key={dim.key} className={group.category ? 'pl-3' : ''}>
                   <Label className="text-sm font-medium">{dim.label}</Label>
                   <p className="text-xs text-muted-foreground mb-2">{dim.description}</p>
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {[0, 1, 2, 3, 4, 5].map((val) => (
                       <button
                         key={val}
                         type="button"
                         onClick={() => setScores((s) => ({ ...s, [dim.key]: val }))}
-                        className={`w-8 h-8 rounded-full border-2 text-sm font-medium transition-colors ${
+                        className={`w-9 h-9 rounded-full border-2 text-sm font-medium transition-colors ${
                           scores[dim.key] === val
-                            ? 'bg-blue-600 text-white border-blue-600'
+                            ? val === 0
+                              ? 'bg-gray-500 text-white border-gray-500'
+                              : 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
                         }`}
                       >
@@ -107,7 +109,7 @@ export function EvaluationForm({
                       </button>
                     ))}
                     <span className="text-xs text-muted-foreground ml-2">
-                      1=低い 〜 10=高い
+                      0=判断できない / 1=あてはまらない 〜 5=あてはまる
                     </span>
                   </div>
                 </div>

@@ -7,10 +7,11 @@ import type { Eval360ResultView, Eval360Dimension } from '@/lib/types';
 interface ResultSummaryProps {
   result: Eval360ResultView;
   dimensions: Eval360Dimension[];
+  showDetail?: boolean; // false: 総合スコア＋レーダーチャートのみ
 }
 
 function OverallScoreBar({ description, score }: { description: string; score: number }) {
-  const pct = (score / 10) * 100;
+  const pct = (score / 5) * 100;
   return (
     <div className="flex items-center gap-3 border-b border-gray-100 pb-2">
       <div className="w-48 sm:w-64 shrink-0">
@@ -29,7 +30,7 @@ function OverallScoreBar({ description, score }: { description: string; score: n
   );
 }
 
-export function ResultSummary({ result, dimensions }: ResultSummaryProps) {
+export function ResultSummary({ result, dimensions, showDetail = true }: ResultSummaryProps) {
   // カテゴリでグループ化（シートの順序を維持）
   const grouped: { category: string | null; items: typeof dimensions }[] = [];
   for (const dim of dimensions) {
@@ -44,7 +45,7 @@ export function ResultSummary({ result, dimensions }: ResultSummaryProps) {
 
   return (
     <div className="space-y-6">
-      <ResultRadarChart result={result} dimensions={dimensions} />
+      <ResultRadarChart result={result} dimensions={dimensions} showDetail={showDetail} />
 
       <div className="bg-white border rounded-lg p-4">
         <h3 className="text-sm font-semibold mb-3">総合スコア</h3>
@@ -71,15 +72,17 @@ export function ResultSummary({ result, dimensions }: ResultSummaryProps) {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {result.categories.map((cat) => (
-          <ResultCategoryCard
-            key={cat.relationship}
-            category={cat}
-            dimensions={dimensions}
-          />
-        ))}
-      </div>
+      {showDetail && result.categories.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {result.categories.map((cat) => (
+            <ResultCategoryCard
+              key={cat.relationship}
+              category={cat}
+              dimensions={dimensions}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
