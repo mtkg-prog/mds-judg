@@ -141,9 +141,6 @@ async function handleAutoAssign(cycleId: string) {
   const data: { cycleId: string; evaluateeId: string; evaluatorId: string; relationship: string }[] = [];
 
   for (const emp of employees) {
-    // 本人（self）
-    data.push({ cycleId, evaluateeId: emp.id, evaluatorId: emp.id, relationship: '本人' });
-
     // 上司（manager evaluates subordinate）
     if (emp.managerId) {
       data.push({ cycleId, evaluateeId: emp.id, evaluatorId: emp.managerId, relationship: '上司' });
@@ -233,12 +230,6 @@ async function handleSheetImport(cycleId: string) {
       evaluatorId: numberToId.get(normalizeEmployeeNumber(row.evaluatorNumber))!,
       relationship: row.relationship,
     });
-  }
-
-  // Auto-generate self-evaluations for all evaluatees
-  const evaluateeIds = [...new Set(data.map((d) => d.evaluateeId))];
-  for (const evaluateeId of evaluateeIds) {
-    data.push({ cycleId, evaluateeId, evaluatorId: evaluateeId, relationship: '本人' });
   }
 
   // Insert with duplicate check

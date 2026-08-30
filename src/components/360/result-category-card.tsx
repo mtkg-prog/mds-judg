@@ -61,7 +61,7 @@ export function ResultCategoryCard({ category, dimensions }: ResultCategoryCardP
                 <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 rounded-full"
-                    style={{ width: `${(category.averageScores[dim.key] ?? 0) / 10 * 100}%` }}
+                    style={{ width: `${(category.averageScores[dim.key] ?? 0) / 5 * 100}%` }}
                   />
                 </div>
                 <span className="text-sm font-semibold w-8 text-right">{(category.averageScores[dim.key] ?? 0).toFixed(1)}</span>

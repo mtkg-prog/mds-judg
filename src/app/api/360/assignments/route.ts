@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     });
 
     const filtered = assignments.filter(
-      (a) => a.cycle.status === 'open' || a.status === 'submitted'
+      (a) => (a.cycle.status === 'open' || a.status === 'submitted') && a.relationship !== '本人'
     );
     const views = filtered.map((a) => ({
       id: a.id,

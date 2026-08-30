@@ -50,9 +50,12 @@ export async function GET(
       where: { cycleId, evaluateeId: employeeId },
     });
 
+    // 自己評価（本人）を集計対象から除外
+    const filteredResponses = responses.filter((r) => r.relationship !== '本人');
+
     // Group by relationship
-    const grouped = new Map<string, typeof responses>();
-    for (const r of responses) {
+    const grouped = new Map<string, typeof filteredResponses>();
+    for (const r of filteredResponses) {
       const list = grouped.get(r.relationship) || [];
       list.push(r);
       grouped.set(r.relationship, list);
@@ -70,6 +73,8 @@ export async function GET(
       for (const r of resps) {
         const parsed = JSON.parse(r.scores) as Record<string, number>;
         for (const [key, val] of Object.entries(parsed)) {
+          // 0=「判断できない」は集計対象外
+          if (val === 0) continue;
           scoreSums[key] = (scoreSums[key] || 0) + val;
           scoreCounts[key] = (scoreCounts[key] || 0) + 1;
           allScoreSums[key] = (allScoreSums[key] || 0) + val;
@@ -104,12 +109,15 @@ export async function GET(
       overallAverages[key] = Math.round((allScoreSums[key] / allScoreCounts[key]) * 100) / 100;
     }
 
+    // 非管理者には総合平均のみ返す（関係別詳細・コメントは非公開）
+    const isAdmin = user.role === 'admin';
+
     return NextResponse.json({
       success: true,
       result: {
         evaluateeName: employee.name,
         cycleName: cycle.name,
-        categories,
+        categories: isAdmin ? categories : [],
         overallAverages,
       },
     });

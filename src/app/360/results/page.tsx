@@ -43,15 +43,6 @@ export default function MyResultsPage() {
         cycleIds = Array.from(closedCycles) as string[];
       }
 
-      const selfAssignment = dataAssignments.assignments.find(
-        (a: { relationship: string }) => a.relationship === '本人'
-      );
-
-      if (!selfAssignment) {
-        setLoading(false);
-        return;
-      }
-
       const allResults: Eval360ResultView[] = [];
 
       for (const cycleId of cycleIds) {
@@ -100,7 +91,7 @@ export default function MyResultsPage() {
           {results.map((result, i) => (
             <div key={i}>
               <h2 className="text-lg font-semibold mb-4">{result.cycleName}</h2>
-              <ResultSummary result={result} dimensions={dimensions} />
+              <ResultSummary result={result} dimensions={dimensions} showDetail={false} />
             </div>
           ))}
         </div>
