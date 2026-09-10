@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildScoringPrompt, calculateMissionWeightedPoint } from '@/lib/scoring';
 import { callGeminiForScoring } from '@/lib/gemini';
 import { getSession } from '@/lib/auth';
+import { validateMissionContentQuality } from '@/lib/content-validation';
 import type { ScoringRequest, ScoringResponse } from '@/lib/types';
 
 export async function POST(request: NextRequest): Promise<NextResponse<ScoringResponse>> {
@@ -37,6 +38,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScoringRe
           { status: 400 }
         );
       }
+    }
+
+    // 内容品質チェック（フィラー文字・記号パディング検出）
+    const qualityResult = validateMissionContentQuality(mission);
+    if (!qualityResult.isValid) {
+      return NextResponse.json(
+        { success: false, error: qualityResult.errorMessage },
+        { status: 400 }
+      );
     }
 
     const prompt = buildScoringPrompt(mission, body.position, body.departmentType, body.quantitative);

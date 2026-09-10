@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DEPARTMENT_TYPES, POSITIONS, type BusinessQuantitativeInput, type DepartmentType, type IndirectQuantitativeInput, type MissionInput, type Position, type QuantitativeInput } from '@/lib/types';
+import { validateContentQuality } from '@/lib/content-validation';
 
 const MIN_CHAR_M1 = 10;
 const MIN_CHAR_DETAIL = 30;
@@ -44,6 +45,24 @@ function CharCount({ value, min }: { value: string; min: number }) {
   );
 }
 
+/** 文字数を満たしているが品質不合格のフィールドに警告を表示 */
+function ContentWarning({ value, min }: { value: string; min: number }) {
+  if (value.length < min) return null;
+  const result = validateContentQuality(value, '');
+  if (result.isValid) return null;
+  return (
+    <p className="text-xs text-red-500 mt-1">
+      記号や装飾文字が多すぎます。具体的な内容を記述してください。
+    </p>
+  );
+}
+
+/** フィールドの品質チェック（文字数を満たしている場合のみ） */
+function isFieldContentValid(value: string, min: number): boolean {
+  if (value.length < min) return true; // 文字数不足は既存チェックに任せる
+  return validateContentQuality(value, '').isValid;
+}
+
 export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
   const [position, setPosition] = useState<Position | ''>('');
   const [departmentType, setDepartmentType] = useState<DepartmentType | ''>('');
@@ -61,7 +80,12 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
     m.m2_backgroundGoal.length >= MIN_CHAR_DETAIL &&
     m.m3_contentDifficulty.length >= MIN_CHAR_DETAIL &&
     m.m4_stakeholdersRole.length >= MIN_CHAR_DETAIL &&
-    m.m5_feasibilityEvidence.length >= MIN_CHAR_DETAIL
+    m.m5_feasibilityEvidence.length >= MIN_CHAR_DETAIL &&
+    isFieldContentValid(m.m1_missionName, MIN_CHAR_M1) &&
+    isFieldContentValid(m.m2_backgroundGoal, MIN_CHAR_DETAIL) &&
+    isFieldContentValid(m.m3_contentDifficulty, MIN_CHAR_DETAIL) &&
+    isFieldContentValid(m.m4_stakeholdersRole, MIN_CHAR_DETAIL) &&
+    isFieldContentValid(m.m5_feasibilityEvidence, MIN_CHAR_DETAIL)
   );
 
   function updateMission(id: string, field: keyof MissionInput, value: string | number) {
@@ -295,6 +319,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
                 onChange={e => updateMission(mission.id, 'm1_missionName', e.target.value)}
                 placeholder="ミッションの名称を入力"
               />
+              <ContentWarning value={mission.m1_missionName} min={MIN_CHAR_M1} />
             </div>
 
             <div className="space-y-2">
@@ -308,6 +333,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
                 placeholder="背景や課題、ゴールを記述"
                 rows={3}
               />
+              <ContentWarning value={mission.m2_backgroundGoal} min={MIN_CHAR_DETAIL} />
             </div>
 
             <div className="space-y-2">
@@ -321,6 +347,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
                 placeholder="具体的な内容や難易度を記述"
                 rows={3}
               />
+              <ContentWarning value={mission.m3_contentDifficulty} min={MIN_CHAR_DETAIL} />
             </div>
 
             <div className="space-y-2">
@@ -334,6 +361,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
                 placeholder="関係先や自分の立ち位置を記述"
                 rows={3}
               />
+              <ContentWarning value={mission.m4_stakeholdersRole} min={MIN_CHAR_DETAIL} />
             </div>
 
             <div className="space-y-2">
@@ -347,6 +375,7 @@ export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {
                 placeholder="実現可能性の根拠を記述"
                 rows={3}
               />
+              <ContentWarning value={mission.m5_feasibilityEvidence} min={MIN_CHAR_DETAIL} />
             </div>
           </CardContent>
         </Card>
