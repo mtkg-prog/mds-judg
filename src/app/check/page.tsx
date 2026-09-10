@@ -18,6 +18,7 @@ export default function CheckPage() {
 
     try {
       const scoredMissions: MissionWithScore[] = [];
+      let contentWarning: string | undefined;
 
       for (const mission of missions) {
         const res = await fetch('/api/scoring', {
@@ -32,6 +33,11 @@ export default function CheckPage() {
           setError(data.error || 'AI採点に失敗しました。');
           setIsLoading(false);
           return;
+        }
+
+        // 最初のcontentWarningを保持
+        if (data.contentWarning && !contentWarning) {
+          contentWarning = data.contentWarning;
         }
 
         scoredMissions.push({
@@ -64,6 +70,7 @@ export default function CheckPage() {
         gradeNumber,
         gradeLabel,
         gradePay,
+        contentWarning,
       });
     } catch (e) {
       setError(`エラーが発生しました: ${e}`);

@@ -45,22 +45,30 @@ function CharCount({ value, min }: { value: string; min: number }) {
   );
 }
 
-/** 文字数を満たしているが品質不合格のフィールドに警告を表示 */
+/** 文字数を満たしているフィールドの品質を3段階で表示 */
 function ContentWarning({ value, min }: { value: string; min: number }) {
   if (value.length < min) return null;
   const result = validateContentQuality(value, '');
-  if (result.isValid) return null;
+  if (result.level === 'ok') return null;
+  if (result.level === 'error') {
+    return (
+      <p className="text-xs text-red-500 mt-1">
+        記号が多すぎるため採点できません。具体的な内容で再入力してください。
+      </p>
+    );
+  }
+  // warning
   return (
-    <p className="text-xs text-red-500 mt-1">
-      記号や装飾文字が多すぎます。具体的な内容を記述してください。
+    <p className="text-xs text-amber-600 mt-1">
+      記号や伏せ字が多く含まれています。AI採点の精度が低下する可能性があります。
     </p>
   );
 }
 
-/** フィールドの品質チェック（文字数を満たしている場合のみ） */
+/** フィールドがエラーレベルかどうか（errorのみ送信ブロック、warningは許可） */
 function isFieldContentValid(value: string, min: number): boolean {
-  if (value.length < min) return true; // 文字数不足は既存チェックに任せる
-  return validateContentQuality(value, '').isValid;
+  if (value.length < min) return true;
+  return validateContentQuality(value, '').level !== 'error';
 }
 
 export function CheckForm({ onSubmit, isLoading }: CheckFormProps) {

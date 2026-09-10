@@ -1,4 +1,5 @@
 import type { AIScoreResult, BusinessQuantitativeInput, ComputedRatios, DepartmentType, IndirectQuantitativeInput, MissionInput, PositionGroup, QuantitativeInput } from './types';
+import type { ContentQualityLevel } from './content-validation';
 import { roundToTwo } from './utils';
 import { normalizePositionGroup } from './aggregation';
 import { getGroupRubric, getQuantitativeRubric } from './scoring-rubrics';
@@ -100,7 +101,7 @@ ${instruction}
 `;
 }
 
-export function buildScoringPrompt(inputData: MissionInput, position?: string, departmentType?: DepartmentType, quantitative?: QuantitativeInput): string {
+export function buildScoringPrompt(inputData: MissionInput, position?: string, departmentType?: DepartmentType, quantitative?: QuantitativeInput, contentQualityLevel?: ContentQualityLevel): string {
   const { groupLabel, groupDescription } = getPositionGroupContext(position);
   const group = position ? normalizePositionGroup(position) : 'groupA';
   const rubricSection = getGroupRubric(group);
@@ -119,6 +120,19 @@ ${groupDescription}
   // 定量データセクション（入力がある場合のみ）
   const quantitativeSection = hasQuant
     ? buildQuantitativeSection(quantitative!, departmentType || 'business')
+    : '';
+
+  // 記述品質が低い場合の追加指示
+  const qualityWarningSection = contentQualityLevel === 'warning'
+    ? `
+【★記述品質に関する注意】
+この提出内容には記号・伏せ字・装飾文字が通常より多く含まれています。
+以下の方針で採点してください：
+- 記号・伏せ字（●など）で隠された部分は「記載なし」として扱い、その部分の情報は評価に含めないでください
+- 実際に読み取れる日本語の記述内容のみを評価対象としてください
+- 記号部分を好意的に解釈（「きっと具体的な内容があるのだろう」）しないでください
+- commentに「記号・伏せ字が多いため、読み取れる内容のみで採点しています」と明記してください
+`
     : '';
 
   // 採点次元数に応じた出力ルール
@@ -153,7 +167,7 @@ ${groupDescription}
   return `
 あなたは人事評価制度の厳格な採点官です。
 以下の提出フォーマットをもとに、各項目を1〜10点で**厳しく**採点してください。
-${positionSection}${departmentSection}${mvvSection}
+${positionSection}${departmentSection}${mvvSection}${qualityWarningSection}
 【重要な採点方針】
 - あなたは甘い採点を絶対にしてはいけません。厳格かつ保守的に採点してください。
 - 5点が「この役職グループにとって標準的なミッション」の基準です。大半のミッションは4〜6点に収まるべきです。

@@ -63,6 +63,13 @@ export function ScoreResult({ result }: ScoreResultProps) {
         </CardContent>
       </Card>
 
+      {result.contentWarning && (
+        <div className="rounded-lg border-2 border-orange-400 bg-orange-50 p-4 text-sm text-orange-900 dark:border-orange-700 dark:bg-orange-950 dark:text-orange-200">
+          <p className="font-bold">記述内容に関する注意</p>
+          <p className="mt-1 text-xs">{result.contentWarning}</p>
+        </div>
+      )}
+
       <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
         <p className="font-bold">この結果はAIによる参考値です</p>
         <p className="mt-2 text-xs">
