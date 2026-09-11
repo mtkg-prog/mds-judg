@@ -33,7 +33,18 @@ export async function GET(request: NextRequest) {
 
       if (employee) {
         const group = await resolvePositionGroupByPosition(employee.position);
+        const allDims = await load360Dimensions(sheetName);
         const dimensions = await load360DimensionsForGroup(group, sheetName);
+        console.log('[360/dimensions] debug:', {
+          evaluateeId,
+          cycleId,
+          sheetName,
+          position: employee.position,
+          group,
+          totalDimensions: allDims.length,
+          filteredDimensions: dimensions.length,
+          sampleGroups: allDims.slice(0, 3).map(d => ({ key: d.key, groups: d.groups })),
+        });
         return NextResponse.json({ success: true, dimensions });
       }
     }
