@@ -41,7 +41,8 @@ export default function EvaluatePage() {
           const resDims = await fetch(`/api/360/dimensions?${dimParams.toString()}`);
           const dataDims = await resDims.json();
           if (dataDims.success) setDimensions(dataDims.dimensions);
-          if (dataDims._debug) setDebugInfo(dataDims._debug);
+          // デバッグ: APIレスポンス全体を保存
+          setDebugInfo({ apiStatus: resDims.status, ...dataDims, dimensions: `${(dataDims.dimensions || []).length}件` });
 
           if (found.status === 'submitted') {
             setError('この評価は既に提出済みです');
