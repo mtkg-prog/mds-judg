@@ -75,6 +75,7 @@ export interface ScoringResponse {
   success: boolean;
   scores?: AIScoreResult;
   missionWeightedPoint?: number;
+  contentWarning?: string;
   error?: string;
 }
 
@@ -90,6 +91,7 @@ export interface CheckResult {
   gradeNumber: number;
   gradeLabel: string;
   gradePay: number;
+  contentWarning?: string;
 }
 
 // Master data types (from spreadsheet master sheet)

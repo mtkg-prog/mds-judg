@@ -40,16 +40,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScoringRe
       }
     }
 
-    // 内容品質チェック（フィラー文字・記号パディング検出）
+    // 内容品質チェック（3段階: ok / warning / error）
     const qualityResult = validateMissionContentQuality(mission);
-    if (!qualityResult.isValid) {
+    if (qualityResult.level === 'error') {
       return NextResponse.json(
         { success: false, error: qualityResult.errorMessage },
         { status: 400 }
       );
     }
 
-    const prompt = buildScoringPrompt(mission, body.position, body.departmentType, body.quantitative);
+    // warningレベルの場合、プロンプトに品質注意を付加して採点続行
+    const contentQualityLevel = qualityResult.level;
+    const prompt = buildScoringPrompt(mission, body.position, body.departmentType, body.quantitative, contentQualityLevel);
     const result = await callGeminiForScoring(prompt);
 
     if (!result.success || !result.data) {
@@ -61,10 +63,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScoringRe
 
     const missionWeightedPoint = calculateMissionWeightedPoint(result.data, mission.weight, body.position);
 
+    // warningの場合、レスポンスに注意書きを含める
+    const contentWarning = contentQualityLevel === 'warning'
+      ? '記号や伏せ字が多く含まれているため、AI採点の精度が低下している可能性があります。実際のMDS提出時には具体的な内容を記述してください。'
+      : undefined;
+
     return NextResponse.json({
       success: true,
       scores: result.data,
       missionWeightedPoint,
+      contentWarning,
     });
   } catch (e) {
     return NextResponse.json(
