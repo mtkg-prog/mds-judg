@@ -23,6 +23,8 @@ export default function CycleDetailPage() {
   const [pendingCount, setPendingCount] = useState(0);
   const [submittedCount, setSubmittedCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [editingSheet, setEditingSheet] = useState(false);
 
   async function fetchCycle() {
     const res = await fetch(`/api/360/cycles/${cycleId}`);
@@ -35,7 +37,28 @@ export default function CycleDetailPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchCycle(); }, [cycleId]);
+  async function fetchSheetNames() {
+    const res = await fetch('/api/360/sheets');
+    const data = await res.json();
+    if (data.success) setSheetNames(data.sheetNames);
+  }
+
+  async function handleSheetChange(newSheetName: string) {
+    const res = await fetch(`/api/360/cycles/${cycleId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dimensionSheetName: newSheetName }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      fetchCycle();
+      setEditingSheet(false);
+    } else {
+      alert(data.error);
+    }
+  }
+
+  useEffect(() => { fetchCycle(); fetchSheetNames(); }, [cycleId]);
 
   async function handleStatusChange(newStatus: string) {
     const res = await fetch(`/api/360/cycles/${cycleId}`, {
@@ -100,9 +123,29 @@ export default function CycleDetailPage() {
             {new Date(cycle.startDate).toLocaleDateString()} 〜{' '}
             {new Date(cycle.endDate).toLocaleDateString()}
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            評価項目シート: <span className="font-medium text-foreground">{cycle.dimensionSheetName}</span>
-          </p>
+          <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+            評価項目シート:
+            {editingSheet ? (
+              <select
+                value={cycle.dimensionSheetName}
+                onChange={(e) => handleSheetChange(e.target.value)}
+                onBlur={() => setEditingSheet(false)}
+                className="h-7 rounded border border-input bg-transparent px-2 text-sm text-foreground"
+                autoFocus
+              >
+                {sheetNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            ) : (
+              <>
+                <span className="font-medium text-foreground">{cycle.dimensionSheetName}</span>
+                {cycle.status !== 'closed' && (
+                  <button onClick={() => setEditingSheet(true)} className="text-blue-600 hover:underline text-xs">変更</button>
+                )}
+              </>
+            )}
+          </div>
         </div>
         <Badge variant={cycle.status === 'open' ? 'default' : 'secondary'}>
           {statusLabel[cycle.status] || cycle.status}

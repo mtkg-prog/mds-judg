@@ -54,12 +54,12 @@ export async function PATCH(
     const body = await request.json();
     const { status, name, startDate, endDate, dimensionSheetName } = body;
 
-    // シート名はdraft状態のみ変更可能
+    // シート名はdraftまたはopen状態で変更可能
     if (dimensionSheetName !== undefined) {
       const current = await prisma.evaluationCycle.findUnique({ where: { id } });
-      if (current && current.status !== 'draft') {
+      if (current && current.status === 'closed') {
         return NextResponse.json(
-          { success: false, error: '評価項目シートは下書き状態でのみ変更できます' },
+          { success: false, error: '評価項目シートは終了済みサイクルでは変更できません' },
           { status: 400 }
         );
       }

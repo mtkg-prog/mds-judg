@@ -37,6 +37,13 @@ export default function Admin360Page() {
     const data = await res.json();
     if (data.success && data.sheetNames.length > 0) {
       setSheetNames(data.sheetNames);
+      // 初期値がシート一覧に含まれない場合、最初のシート名に更新
+      setForm((f) => {
+        if (!data.sheetNames.includes(f.dimensionSheetName)) {
+          return { ...f, dimensionSheetName: data.sheetNames[0] };
+        }
+        return f;
+      });
     }
   }
 
