@@ -22,6 +22,8 @@ export default function EvaluatePage() {
   const [dimensions, setDimensions] = useState<Eval360Dimension[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
     async function fetch_() {
@@ -39,6 +41,7 @@ export default function EvaluatePage() {
           const resDims = await fetch(`/api/360/dimensions?${dimParams.toString()}`);
           const dataDims = await resDims.json();
           if (dataDims.success) setDimensions(dataDims.dimensions);
+          if (dataDims._debug) setDebugInfo(dataDims._debug);
 
           if (found.status === 'submitted') {
             setError('この評価は既に提出済みです');
@@ -71,6 +74,11 @@ export default function EvaluatePage() {
     return (
       <div className="mx-auto max-w-3xl px-6 py-8">
         <p className="text-muted-foreground mb-4">データが取得できません</p>
+        {debugInfo && (
+          <pre className="bg-muted text-xs p-4 rounded mb-4 overflow-auto">
+            {JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        )}
         <Link href="/360" className="text-blue-600 hover:underline">← 360度評価に戻る</Link>
       </div>
     );
