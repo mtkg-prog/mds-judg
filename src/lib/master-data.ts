@@ -29,7 +29,8 @@ export async function loadMasterData(): Promise<MasterData | null> {
 function resolvePositionGroup(masterData: MasterData, position: string): PositionGroup {
   const p = position.trim();
   const mapping = masterData.positionMappings.find(m => m.position === p);
-  return mapping ? mapping.group : 'groupA';
+  // マスターシートにマッピングがない場合、ハードコード版にフォールバック
+  return mapping ? mapping.group : normalizePositionGroup(p);
 }
 
 function groupToPrefix(group: PositionGroup): string {
@@ -122,7 +123,8 @@ export async function resolvePositionGroupByPosition(position: string): Promise<
   if (masterData) {
     return resolvePositionGroup(masterData, position);
   }
-  return 'groupA';
+  // マスターデータが取得できない場合もハードコード版にフォールバック
+  return normalizePositionGroup(position);
 }
 
 export async function resolveGrade(position: string, totalPoint: number): Promise<GradeResult> {
